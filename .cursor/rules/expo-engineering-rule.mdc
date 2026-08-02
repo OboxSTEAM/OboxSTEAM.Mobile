@@ -1,0 +1,123 @@
+---
+description: OboxSTEAM Mobile Expo engineering — Router, SecureStore, API copy-sync, Zod
+alwaysApply: true
+---
+
+# OboxSTEAM Mobile — Expo Engineering
+
+Parent mobile app standards. **Visual design:** `styling-rule.mdc`. **Domain/routes:** `context.mdc`. **Endpoints:** `parent-api.mdc`. **FE re-copy:** `SYNC.md`.
+
+---
+
+## Stack
+
+Expo Router · TypeScript · NativeWind v4 · Zod · react-hook-form · **pnpm only** · `expo-secure-store` · `lucide-react-native`
+
+**No:** Next.js RSC / Server Actions, `next/image`, shadcn/Radix DOM, FE mega `lib/api/index.ts` barrel, Redux by default.
+
+---
+
+## Before coding
+
+1. **Review** — Grep/Read until `.codegraph/` exists; then prefer Codegraph for TS/TSX.
+2. **Plan** — multi-step work; preserve names/literals unless change required.
+3. **Implement** — small increments; smoke on Expo Go (physical phone preferred).
+4. **Secure** — auth tokens only in SecureStore; no secrets in `EXPO_PUBLIC_*` beyond API base URL.
+
+Prefer concepts over code when sufficient; ask on ambiguity.
+
+---
+
+## Code style
+
+Functional TypeScript (no classes); auxiliary verbs (`isLoading`, `canSubmit`); early returns; typed errors at API/UI boundaries.
+
+**Layout:** exported screen/component → helpers → types; folders `kebab-case`; comments only for non-obvious logic.
+
+**Imports:** `@/` → `src/`. Strip any leftover Next-only imports when copying from FE.
+
+---
+
+## Expo & React Native
+
+- Screens live under `app/` (Expo Router file routes). Shared UI/logic under `src/`.
+- No RSC — all screens are client. Prefer simple components; avoid unnecessary `useEffect`.
+- Deep links / external checkout: `expo-linking` / `Linking.openURL`.
+- Android-first; do not assume iOS-only APIs without a fallback.
+- Expo Go on device must match **project SDK** (Play Store may lag — use [expo.dev/go](https://expo.dev/go) for the matching SDK).
+
+---
+
+## Auth & session
+
+FE uses `sessionStorage`. Mobile **must**:
+
+1. Persist `accessToken` + `refreshToken` (+ optional user cache) in **SecureStore** (`src/lib/auth/session.ts`).
+2. Keep the same refresh POST body/contract as FE (`/api/auth/refresh-token`).
+3. Attach `Authorization: Bearer` via API interceptors (adapted from FE).
+4. After `getCurrentUser`, if role is not Parent → block UI + logout / “use website”.
+
+---
+
+## State, forms, data
+
+- Auth/session: SecureStore + lightweight React context (no Redux unless clearly needed).
+- Forms: Zod + react-hook-form (`zodResolver`); Vietnamese messages in `src/lib/validations/`.
+- Normalize API responses at boundaries; never trust untyped JSON in UI.
+
+---
+
+## API layer (`src/lib/api/`)
+
+Copied and trimmed from FE. Backend envelope: `{ isSuccess, value, error }` with `value` often `{ code, message, data? }`.
+
+### Layout
+
+```text
+src/lib/api/
+  client.ts, create-endpoint.ts, errors.ts, schemas.ts, config.ts
+  interceptors/          # token from SecureStore
+  auth/, account/, parent/, payments/, notifications/
+  entities/              # shared DTOs
+  index.ts               # SLIM Parent-only barrel — do not paste FE mega-barrel
+src/lib/validations/     # request Zod (auth, parent, payments, notifications, account)
+src/lib/errors/          # resolveAppError; toast via RN snackbar — not Sonner
+```
+
+### Zod responsibilities
+
+| Layer | Location | Purpose |
+|-------|----------|---------|
+| Request / form | `src/lib/validations/<domain>.ts` | RHF + `createApiPost({ input })` |
+| Response | `src/lib/api/<domain>/schemas.ts` | Parse backend JSON |
+| Envelope | `src/lib/api/schemas.ts` | Shared wrapper — do not duplicate |
+
+- Prefer `z.infer<typeof schema>` over duplicate interfaces.
+- Config: `EXPO_PUBLIC_API_URL` via `src/lib/env.ts` — not Next `env`.
+- When FE contracts change: follow **`SYNC.md`** (manual re-copy), then fix mobile import/storage adaptations.
+
+### Errors
+
+- `ApiRequestError` — non-2xx HTTP.
+- `ApiResponseError` — HTTP OK but `isSuccess: false`.
+- User-facing: `resolveAppError` → RN toast/snackbar (title / reason / action). No stacks or internal IDs.
+
+---
+
+## Copy-sync policy
+
+- **Do copy** Parent-needed `lib/api/*`, validations, session/roles logic, errors resolve, entities.
+- **Do not copy** `components/ui/*`, Next `app/` pages, GSAP/TipTap, manager tables, full FE barrels.
+- After copy: rewrite `@/` paths, SecureStore session, drop Next env, slim `index.ts`.
+
+---
+
+## Security & ops
+
+Validate input with Zod. No tokens in AsyncStorage or logs. Least privilege (Parent-only UI). Device must reach API over HTTPS (no phone→localhost unless tunnel/`adb reverse`).
+
+---
+
+## Delivery
+
+Focused, typed, lint-clean diffs. Verify on Expo Go or preview APK. Match OboxSTEAM Parent patterns from FE without inventing endpoints.

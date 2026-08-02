@@ -1,0 +1,69 @@
+---
+description: OboxSTEAM Mobile UI — NativeWind tokens, RN patterns (no shadcn/DOM)
+alwaysApply: false
+globs: "**/*.{ts,tsx}"
+---
+
+# OboxSTEAM Mobile — Styling (NativeWind)
+
+Brand parity with FE without copying web UI. Use **NativeWind `className`** on RN primitives (`View`, `Text`, `Pressable`, `ScrollView`). Tokens live in `tailwind.config.js` and `src/lib/tokens/colors.ts`.
+
+---
+
+## Brand colors
+
+| Token | Hex | Use |
+|-------|-----|-----|
+| primary | `#E94B3C` | CTAs, alerts, Science |
+| steam.technology | `#7CB342` | Success / Technology |
+| steam.arts | `#FDD835` | Highlights / Arts |
+| accent / steam.engineering | `#4FC3F7` | Links / Engineering |
+| steam.mathematics | `#7E57C2` | Math / premium |
+| background | `#FAFAF5` | Screen background |
+| secondary / muted | `#F5F5F0` | Subtle surfaces |
+| foreground | `#2D2D2D` | Headings / primary text |
+| muted-foreground | `#6B6B6B` | Body secondary |
+| card | `#FFFFFF` | Elevated surfaces |
+| border | `#E5E5E0` | Dividers / outlines |
+
+NativeWind examples: `bg-background`, `text-foreground`, `bg-primary`, `text-primary-foreground`, `border-border`, `bg-steam-technology`.
+
+---
+
+## Typography
+
+- Prefer system / Expo fonts for v1; headings can use Nunito later via `expo-font`.
+- Hierarchy via `text-2xl font-bold`, `text-base`, `text-sm`, `text-xs` — generous line height for readability.
+- Vietnamese copy: keep FE Parent phrasing when porting screens.
+
+---
+
+## Spacing & radius
+
+8px grid (Tailwind scale). Friendly radii: controls `rounded-lg` (~12), cards/modals `rounded-2xl` (~16). Touch targets **≥ 44px** height.
+
+---
+
+## Icons
+
+`lucide-react-native` only. Sparingly: nav, ambiguous actions, status. Size 20–24; STEAM color only for category cues. Requires `react-native-svg`.
+
+---
+
+## RN layout rules
+
+- One job per screen section; avoid dashboard clutter on first paint.
+- Prefer full-width lists and simple stacks over web-style multi-column layouts.
+- **No shadcn / Radix / DOM assumptions** — no `div`, CSS modules, `hover:`-only interactions (use `Pressable` / `active:` carefully).
+- Cards: white/`bg-card` + light border or subtle elevation; **no** left accent border rails (`border-l-*` category stripes).
+- Primary button: `bg-primary` + white text. Secondary: `bg-secondary` + charcoal text.
+- Loading/empty/error states should match list layout (skeleton or simple centered message).
+- Errors: snackbar/toast from `resolveAppError` — not Sonner.
+
+---
+
+## Do not
+
+- Copy FE `components/ui/*` or GSAP/Motion landing patterns.
+- Invent new brand colors outside the token table.
+- Rely on web-only Tailwind (e.g. complex grid, sticky that doesn’t map to RN) without an RN equivalent.

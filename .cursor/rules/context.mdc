@@ -1,0 +1,84 @@
+---
+description: OboxSTEAM Mobile — Parent MVP domain, routes, and scope
+alwaysApply: false
+---
+
+# OboxSTEAM Mobile — Project Context
+
+> Load when working on Parent features, auth, routing, or API wiring. Engineering: `expo-engineering-rule.mdc`. UI: `styling-rule.mdc`. Endpoints: `parent-api.mdc`.
+
+---
+
+## What this repo is
+
+**OboxSTEAM.Mobile** — separate Expo (React Native) app for the **Parent** MVP. Same backend as `OboxSTEAM.FE` (`EXPO_PUBLIC_API_URL`). Web FE stays on VPS; this app is Android-first (Expo Go / EAS APK).
+
+**Out of scope (v1):** Manager screens, portfolio microsites, mentor flows, inventing new backend endpoints, shared npm packages with FE.
+
+---
+
+## Actors (mobile focus)
+
+| Actor | Mobile treatment |
+|-------|------------------|
+| **Parent** | Only supported role after `GET /api/account/me` |
+| Other roles | Show “use website” + logout — do not build Student/Manager UI |
+
+**Parent–Child linking:** Parent sees linked children via `GET /api/parent/links`. Link/approve/magic-login/complete-profile flows mirror FE Parent dialogs as RN screens.
+
+---
+
+## Product domain (short)
+
+OboxSTEAM is a Vietnamese STEAM learning platform. Parents register/link children, pay when requested, and monitor progress/notifications. Portfolio, LMS detail, and mentor tools live on the **web FE** — mobile only surfaces Parent-needed APIs.
+
+---
+
+## Routing (Expo Router)
+
+```text
+app/
+├── (auth)/
+│   └── login.tsx                 → email/password
+├── (app)/                        → tabs after auth (Parent only)
+│   ├── _layout.tsx
+│   ├── index.tsx                 → children list (getParentLinks)
+│   ├── notifications.tsx
+│   ├── profile.tsx               → profile + logout
+│   └── children/[id].tsx         → phase 1b when APIs exist
+└── _layout.tsx
+```
+
+Deep links (phase 1b): magic-login, approve-link, parent checkout → `expo-linking` / `Linking.openURL(checkoutUrl)`.
+
+---
+
+## Tech stack
+
+| Layer | Choice |
+|-------|--------|
+| App | Expo SDK + Expo Router |
+| Language | TypeScript (strict) |
+| Styling | NativeWind v4 + brand tokens in `tailwind.config.js` / `src/lib/tokens` |
+| Forms | Zod + react-hook-form |
+| Auth storage | `expo-secure-store` (not sessionStorage) |
+| State | React context first; no Redux unless needed later |
+| Icons | `lucide-react-native` |
+| Package manager | **pnpm only** |
+| Realtime (1b) | `@microsoft/signalr` + `/hubs/notifications` |
+
+---
+
+## Key conventions
+
+- Alias `@/` → `src/` (FE modules re-copied under `src/lib/...`).
+- Do **not** copy FE `components/ui` (shadcn/DOM) — rebuild with `View` / `Text` / `Pressable`.
+- API/validation/errors: **copy + adapt** from FE; see `SYNC.md` when contracts change.
+- Gate on Parent role after `getCurrentUser`.
+- Vietnamese copy aligned with FE Parent strings where possible.
+- Student/parent PII: never log tokens or personal data.
+
+---
+
+**Project**: OboxSTEAM.Mobile (Parent)
+**Companion**: OboxSTEAM.FE (web)

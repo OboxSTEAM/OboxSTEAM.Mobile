@@ -1,22 +1,24 @@
 {
   "expo": {
-    "name": "OboxSTEAM.Mobile",
-    "slug": "OboxSTEAM.Mobile",
+    "name": "OboxSTEAM Parent",
+    "slug": "oboxsteam-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "oboxsteammobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "oboxsteam",
+    "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "website.oboxsteam.parent"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#FAFAF5",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "package": "website.oboxsteam.parent",
       "predictiveBackGestureEnabled": false
     },
     "web": {
@@ -26,12 +28,13 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#FAFAF5"
         }
       ]
     ],

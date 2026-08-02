@@ -1,0 +1,64 @@
+---
+description: Parent MVP API surface — paths, FE helpers, mobile use
+alwaysApply: false
+---
+
+# OboxSTEAM Mobile — Parent API Map
+
+Load when wiring `src/lib/api/*`, screens, or deep links. Live OpenAPI: https://api.oboxsteam.website/swagger/v1/swagger.json (refresh from FE via `pnpm sync:api-spec` in **OboxSTEAM.FE**, then re-copy per `SYNC.md`).
+
+Base URL: `EXPO_PUBLIC_API_URL` (same backend as FE). Paths are `/api/...`. Auth: Bearer via SecureStore session (except `skipAuth` flows).
+
+---
+
+## Auth / account
+
+| Method | Path | FE helper | Mobile use |
+|--------|------|-----------|------------|
+| POST | `/api/auth/login` | `login` | Email/password login |
+| POST | `/api/auth/refresh-token` | `refreshToken` / interceptor | Silent refresh on 401 |
+| GET | `/api/account/me` | `getCurrentUser` | Role gate (Parent only), profile |
+| PUT | `/api/account/me` | `updateProfile` | Profile edit (phase 1b) |
+
+---
+
+## Parent (`/api/parent`)
+
+| Method | Path | FE helper | Mobile use |
+|--------|------|-----------|------------|
+| GET | `/api/parent/links` | `getParentLinks` | Children list (home) |
+| POST | `/api/parent/request-link` | `requestParentLink` | Request link by parent email |
+| POST | `/api/parent/magic-login` | `parentMagicLogin` | Deep link (`skipAuth`) |
+| POST | `/api/parent/complete-profile` | `completeParentProfile` | Blocking profile completion |
+| POST | `/api/parent/approve-link` | `approveParentLink` | Approve link token from email |
+
+---
+
+## Payments (parent)
+
+| Method | Path | FE helper | Mobile use |
+|--------|------|-----------|------------|
+| POST | `/api/payments/parent-checkout` | `parentCheckout` | Email-link checkout (`skipAuth`) → open `checkoutUrl` |
+| GET | `/api/payments/{id}` | `getPaymentById` | Receipt / status |
+| PATCH | `/api/payments/{id}/cancel` | `cancelPayment` | Cancel pending if exposed |
+| POST | `/api/payments/request-parent` | `requestParentPayment` | Skip v1 UI unless needed |
+
+---
+
+## Notifications
+
+| Method | Path | FE helper | Mobile use |
+|--------|------|-----------|------------|
+| GET | `/api/notifications` | `getNotifications` | Inbox |
+| GET | `/api/notifications/unread-count` | `getUnreadNotificationCount` | Badge |
+| PATCH | `/api/notifications/{id}/read` | `markNotificationRead` | Mark read |
+| PATCH | `/api/notifications/read-all` | `markAllNotificationsRead` | Mark all |
+| Hub | `/hubs/notifications` | `createNotificationHubConnection` | Phase 1b SignalR |
+
+Parent-relevant notification types → mobile routes (not web hrefs): `ParentPaymentRequested`, `ParentModuleRetakeRequested`, `ParentLink*`, payment/program progress → children / browser checkout.
+
+---
+
+## Envelope
+
+Same as FE: `{ isSuccess, value, error }` with `value` often `{ code, message, data? }`. Parse via `src/lib/api/schemas.ts` helpers — never treat raw Swagger DTOs as the top-level response.
