@@ -1,10 +1,5 @@
-import "../global.css";
-
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
-
-export { ErrorBoundary } from "expo-router";
 
 export default function RootLayout() {
   return (
@@ -19,7 +14,7 @@ export default function RootLayout() {
       >
         <Stack.Screen
           name="index"
-          options={{ title: "OboxSTEAM Parent", headerShown: true }}
+          options={{ title: "OboxSTEAM Parent" }}
         />
       </Stack>
     </>

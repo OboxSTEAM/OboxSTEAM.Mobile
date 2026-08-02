@@ -55,17 +55,17 @@ Deep links (phase 1b): magic-login, approve-link, parent checkout → `expo-link
 
 ## Tech stack
 
-| Layer | Choice |
-|-------|--------|
-| App | Expo SDK + Expo Router |
-| Language | TypeScript (strict) |
-| Styling | NativeWind v4 + brand tokens in `tailwind.config.js` / `src/lib/tokens` |
-| Forms | Zod + react-hook-form |
-| Auth storage | `expo-secure-store` (not sessionStorage) |
-| State | React context first; no Redux unless needed later |
-| Icons | `lucide-react-native` |
-| Package manager | **pnpm only** |
-| Realtime (1b) | `@microsoft/signalr` + `/hubs/notifications` |
+| Layer           | Choice                                                                  |
+| -----------------| -------------------------------------------------------------------------|
+| App             | Expo SDK + Expo Router                                                  |
+| Language        | TypeScript (strict)                                                     |
+| Styling         | NativeWind v4 + brand tokens in `tailwind.config.js` / `src/lib/tokens` |
+| Forms           | Zod + react-hook-form                                                   |
+| Auth storage    | `expo-secure-store` (not sessionStorage)                                |
+| State           | React context first; no Redux unless needed later                       |
+| Icons           | `lucide-react-native`                                                   |
+| Package manager | **pnpm only**                                                           |
+| Realtime (1b)   | `@microsoft/signalr` + `/hubs/notifications`                            |
 
 ---
 

@@ -12,19 +12,19 @@ Brand parity with FE without copying web UI. Use **NativeWind `className`** on R
 
 ## Brand colors
 
-| Token | Hex | Use |
-|-------|-----|-----|
-| primary | `#E94B3C` | CTAs, alerts, Science |
-| steam.technology | `#7CB342` | Success / Technology |
-| steam.arts | `#FDD835` | Highlights / Arts |
-| accent / steam.engineering | `#4FC3F7` | Links / Engineering |
-| steam.mathematics | `#7E57C2` | Math / premium |
-| background | `#FAFAF5` | Screen background |
-| secondary / muted | `#F5F5F0` | Subtle surfaces |
-| foreground | `#2D2D2D` | Headings / primary text |
-| muted-foreground | `#6B6B6B` | Body secondary |
-| card | `#FFFFFF` | Elevated surfaces |
-| border | `#E5E5E0` | Dividers / outlines |
+| Token                      | Hex       | Use                     |
+| ----------------------------| -----------| -------------------------|
+| primary                    | `#E94B3C` | CTAs, alerts, Science   |
+| steam.technology           | `#7CB342` | Success / Technology    |
+| steam.arts                 | `#FDD835` | Highlights / Arts       |
+| accent / steam.engineering | `#4FC3F7` | Links / Engineering     |
+| steam.mathematics          | `#7E57C2` | Math / premium          |
+| background                 | `#FAFAF5` | Screen background       |
+| secondary / muted          | `#F5F5F0` | Subtle surfaces         |
+| foreground                 | `#2D2D2D` | Headings / primary text |
+| muted-foreground           | `#6B6B6B` | Body secondary          |
+| card                       | `#FFFFFF` | Elevated surfaces       |
+| border                     | `#E5E5E0` | Dividers / outlines     |
 
 NativeWind examples: `bg-background`, `text-foreground`, `bg-primary`, `text-primary-foreground`, `border-border`, `bg-steam-technology`.
 

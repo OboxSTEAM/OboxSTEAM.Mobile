@@ -4,23 +4,26 @@ Separate Expo (React Native) app for the Parent MVP. Shares the same backend as 
 
 ## Stack
 
-| Layer | Choice |
-|-------|--------|
-| App | Expo SDK 57 + Expo Router |
-| Language | TypeScript |
-| Styling | NativeWind v4 + Obox brand tokens |
-| Forms | Zod + react-hook-form |
-| Auth storage | `expo-secure-store` |
-| Icons | `lucide-react-native` |
-| Package manager | pnpm |
+| Layer           | Choice                            |
+| -----------------| -----------------------------------|
+| App             | Expo SDK 57 + Expo Router         |
+| Language        | TypeScript                        |
+| Styling         | NativeWind v4 + Obox brand tokens |
+| Forms           | Zod + react-hook-form             |
+| Auth storage    | `expo-secure-store`               |
+| Icons           | `lucide-react-native`             |
+| Package manager | pnpm                              |
 
 ## Setup
 
 ```bash
 pnpm install
 cp .env.example .env   # set EXPO_PUBLIC_API_URL
-pnpm start             # Expo Go on a physical phone (preferred)
+pnpm start:clean       # Expo without Console Ninja hooks (preferred on Android)
+# or: pnpm start
 ```
+
+> If Expo Go kicks back to home: use **`pnpm start:clean`**, and in Cursor run **Console Ninja: Pause**. Do not use Play Store Expo Go for SDK 57 — install from [expo.dev/go](https://expo.dev/go?sdkVersion=57&platform=android&device=true).
 
 ### Env
 
@@ -47,10 +50,20 @@ src/
 ## Phase status
 
 - [x] Phase 0 — Expo + NativeWind + env + SecureStore session stub
-- [x] Cursor rules + `SYNC.md` (FE re-copy checklist)
+- [x] Cursor rules + `SYNC.md` + OpenAPI sync MCP
+- [x] Expo Go crash fixed (`node-linker=hoisted`; blank → Router → full stack)
 - [ ] Copy Parent API / validations / errors from FE
 - [ ] Phase 1 screens (login, complete-profile, children, notifications, profile)
 - [ ] EAS preview APK
+
+## Run
+
+```bash
+pnpm start:clean   # preferred (no Console Ninja hooks)
+# Keep only one Metro; scan this project's QR (check port in terminal)
+```
+
+`.npmrc` uses `node-linker=hoisted` (required for stable Expo Go with pnpm).
 
 ## Agent rules & FE sync
 

@@ -49,13 +49,13 @@ Base URL: `EXPO_PUBLIC_API_URL` (same backend as FE). Paths are `/api/...`. Auth
 
 ## Notifications
 
-| Method | Path | FE helper | Mobile use |
-|--------|------|-----------|------------|
-| GET | `/api/notifications` | `getNotifications` | Inbox |
-| GET | `/api/notifications/unread-count` | `getUnreadNotificationCount` | Badge |
-| PATCH | `/api/notifications/{id}/read` | `markNotificationRead` | Mark read |
-| PATCH | `/api/notifications/read-all` | `markAllNotificationsRead` | Mark all |
-| Hub | `/hubs/notifications` | `createNotificationHubConnection` | Phase 1b SignalR |
+| Method | Path                              | FE helper                         | Mobile use       |
+| --------| -----------------------------------| -----------------------------------| ------------------|
+| GET    | `/api/notifications`              | `getNotifications`                | Inbox            |
+| GET    | `/api/notifications/unread-count` | `getUnreadNotificationCount`      | Badge            |
+| PATCH  | `/api/notifications/{id}/read`    | `markNotificationRead`            | Mark read        |
+| PATCH  | `/api/notifications/read-all`     | `markAllNotificationsRead`        | Mark all         |
+| Hub    | `/hubs/notifications`             | `createNotificationHubConnection` | Phase 1b SignalR |
 
 Parent-relevant notification types → mobile routes (not web hrefs): `ParentPaymentRequested`, `ParentModuleRetakeRequested`, `ParentLink*`, payment/program progress → children / browser checkout.
 
