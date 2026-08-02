@@ -1,23 +1,27 @@
+import { CheckCircle2, Users } from "lucide-react-native";
 import { Text, View } from "react-native";
 
-/** Setup smoke only — proves NativeWind brand tokens (not a product screen). */
+/**
+ * Setup smoke only — proves lucide-react-native + react-native-svg.
+ * Not a product screen.
+ */
 export default function HomeScreen() {
   return (
-    <View className="flex-1 justify-center bg-steam-technology px-6">
-      <View className="rounded-2xl border border-border bg-background p-6">
-        <Text className="mb-2 text-center text-2xl font-bold text-primary">
-          OboxSTEAM Parent
+    <View className="flex-1 items-center justify-center bg-background px-6">
+      <View className="w-full items-center rounded-2xl border border-border bg-card p-6">
+        <Text className="mb-4 text-center text-2xl font-bold text-primary">
+          Lucide + SVG setup
         </Text>
-        <Text className="mb-4 text-center text-base text-muted-foreground">
-          Outer green = Steam Technology. Inner cream panel = bg-background
-          (#FAFAF5). Reload if styles look wrong.
-        </Text>
-        <View className="flex-row justify-between gap-2">
-          <View className="h-10 flex-1 rounded-lg bg-primary" />
-          <View className="h-10 flex-1 rounded-lg bg-accent" />
-          <View className="h-10 flex-1 rounded-lg bg-steam-arts" />
-          <View className="h-10 flex-1 rounded-lg bg-steam-mathematics" />
+
+        <View className="mb-4 flex-row items-center gap-4">
+          <Users color="#E94B3C" size={28} />
+          <CheckCircle2 color="#7CB342" size={28} />
         </View>
+
+        <Text className="text-center text-base text-muted-foreground">
+          If you see red Users + green Check icons above, lucide and
+          react-native-svg are wired for Expo Go.
+        </Text>
       </View>
     </View>
   );
