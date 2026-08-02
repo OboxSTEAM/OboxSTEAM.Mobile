@@ -1,34 +1,24 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+/** Setup smoke only — proves NativeWind brand tokens (not a product screen). */
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>OboxSTEAM Parent</Text>
-      <Text style={styles.subtitle}>
-        Expo Go is stable with Router (worklets stubbed for SDK 57 Android).
-      </Text>
+    <View className="flex-1 justify-center bg-steam-technology px-6">
+      <View className="rounded-2xl border border-border bg-background p-6">
+        <Text className="mb-2 text-center text-2xl font-bold text-primary">
+          OboxSTEAM Parent
+        </Text>
+        <Text className="mb-4 text-center text-base text-muted-foreground">
+          Outer green = Steam Technology. Inner cream panel = bg-background
+          (#FAFAF5). Reload if styles look wrong.
+        </Text>
+        <View className="flex-row justify-between gap-2">
+          <View className="h-10 flex-1 rounded-lg bg-primary" />
+          <View className="h-10 flex-1 rounded-lg bg-accent" />
+          <View className="h-10 flex-1 rounded-lg bg-steam-arts" />
+          <View className="h-10 flex-1 rounded-lg bg-steam-mathematics" />
+        </View>
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FAFAF5",
-    paddingHorizontal: 24,
-  },
-  title: {
-    marginBottom: 8,
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#E94B3C",
-    textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#6B6B6B",
-    textAlign: "center",
-  },
-});

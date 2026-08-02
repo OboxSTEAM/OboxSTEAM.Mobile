@@ -1,12 +1,16 @@
 const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
 
-const config = getDefaultConfig(__dirname);
+const config = withNativeWind(getDefaultConfig(__dirname), {
+  input: "./global.css",
+});
 
 /**
  * Expo Go SDK 57 on some Android devices hard-crashes (SIGSEGV in libworklets)
  * when react-native-worklets initializes. Stubbing the JS package avoids the
  * native init path so Expo Go can load. See: github.com/expo/expo/issues/48390
  *
+ * Apply AFTER withNativeWind so NativeWind does not overwrite this resolver.
  * Remove this stub for development builds / production APKs where worklets
  * should run normally.
  */
