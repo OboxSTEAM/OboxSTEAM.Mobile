@@ -5,7 +5,9 @@ alwaysApply: false
 
 # OboxSTEAM Mobile — Parent API Map
 
-Load when wiring `src/lib/api/*`, screens, or deep links. Live OpenAPI: https://api.oboxsteam.website/swagger/v1/swagger.json (refresh from FE via `pnpm sync:api-spec` in **OboxSTEAM.FE**, then re-copy per `SYNC.md`).
+Load when wiring `src/lib/api/*`, screens, or deep links. Full Swagger tooling: `api-spec.mdc`.
+
+**Refresh local OpenAPI:** `pnpm sync:api-spec` (same URL as FE). Then use **obox-api** MCP or `specs/oboxsteam.openapi.json`. When FE already has the Zod wrappers, re-copy per `SYNC.md`.
 
 Base URL: `EXPO_PUBLIC_API_URL` (same backend as FE). Paths are `/api/...`. Auth: Bearer via SecureStore session (except `skipAuth` flows).
 

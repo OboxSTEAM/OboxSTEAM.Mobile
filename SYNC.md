@@ -21,7 +21,7 @@ Mobile **copies** Parent-needed modules from `OboxSTEAM.FE` (no git/npm link). W
 | `lib/errors/types.ts`, `resolve-app-error.ts` | `src/lib/errors/` | replace Sonner with RN toast |
 | `lib/realtime/notification-hub.ts` | `src/lib/realtime/` | phase 1b; SecureStore token |
 
-Optional: refresh FE OpenAPI first (`pnpm sync:api-spec` in FE), then update copied Zod if DTOs changed.
+Optional: refresh **this** repo’s OpenAPI (`pnpm sync:api-spec` — same Swagger as FE), and/or FE’s copy, then update copied Zod if DTOs changed. Use **obox-api** MCP against `./specs`.
 
 ## After every re-copy
 

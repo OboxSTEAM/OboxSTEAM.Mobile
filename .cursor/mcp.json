@@ -1,28 +1,21 @@
 {
-    "mcpServers": {
-        "console-ninja": {
-            "command": "node",
-            "args": [
-                "~/.console-ninja/mcp/"
-            ]
-        },
-        "obox-api": {
-            "command": "npx",
-            "args": [
-                "-y",
-                "@reapi/mcp-openapi@latest",
-                "--dir",
-                "./specs"
-            ]
-        },
-        "codegraph": {
-            "command": "codegraph",
-            "args": [
-                "serve",
-                "--mcp",
-                "--path",
-                "E:\\Semester 9\\OboxSTEAM.Mobile"
-            ]
-        }
+  "mcpServers": {
+    "console-ninja": {
+      "command": "node",
+      "args": ["~/.console-ninja/mcp/"]
+    },
+    "obox-api": {
+      "command": "npx",
+      "args": ["-y", "@reapi/mcp-openapi@latest", "--dir", "./specs"]
+    },
+    "codegraph": {
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp",
+        "--path",
+        "E:\\Semester 9\\OboxSTEAM.Mobile"
+      ]
     }
+  }
 }

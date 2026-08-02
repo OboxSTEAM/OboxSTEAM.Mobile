@@ -9,7 +9,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "sync:api-spec": "node scripts/sync-api-spec.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.5.7",

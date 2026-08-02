@@ -54,7 +54,8 @@ src/
 
 ## Agent rules & FE sync
 
-- Cursor rules: `.cursor/rules/` (conduct, context, Expo engineering, NativeWind styling, Parent API map)
+- Cursor rules: `.cursor/rules/` (conduct, context, Expo engineering, NativeWind styling, Parent API map, API spec)
+- OpenAPI: `pnpm sync:api-spec` → `specs/oboxsteam.openapi.json` (same Swagger as FE); MCP **obox-api** reads `./specs`
 - When FE API contracts change: follow **[`SYNC.md`](./SYNC.md)**
 
 ## Device workflow
