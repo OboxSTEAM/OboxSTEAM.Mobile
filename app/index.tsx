@@ -1,45 +1,135 @@
 import { BRAND_LOGO, BRAND_NAME } from "@/lib/brand";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, Image, View } from "react-native";
 
 const LOGO_SIZE = 148;
-const HOLD_MS = 1300;
-const FADE_OUT_MS = 320;
+const LETTERS = BRAND_NAME.split("");
+
+const LOGO_POP_IN_MS = 620;
+const LOGO_POP_OUT_MS = 420;
+const GAP_AFTER_LOGO_MS = 380;
+const LETTER_STAGGER_MS = 95;
+const LETTER_REVEAL_MS = 420;
+const HOLD_MS = 1600;
+const LETTER_OUT_STAGGER_MS = 55;
+const LETTER_OUT_MS = 280;
+
+type LetterAnim = {
+  opacity: Animated.Value;
+  translateY: Animated.Value;
+  blur: Animated.Value;
+};
+
+function createLetterAnim(): LetterAnim {
+  return {
+    opacity: new Animated.Value(0),
+    translateY: new Animated.Value(8),
+    blur: new Animated.Value(14),
+  };
+}
 
 /**
- * Cold-start branded intro — plays on every launch, then routes to Welcome.
- * Uses RN Animated (not Reanimated) for Expo Go compatibility.
+ * Cold-start intro: logo pops, then each letter of OboxSTEAM
+ * soft-reveals (blur → sharp), then exits and opens Welcome.
  */
 export default function IntroScreen() {
   const router = useRouter();
   const hasAdvanced = useRef(false);
 
   const logoOpacity = useRef(new Animated.Value(0)).current;
-  const logoScale = useRef(new Animated.Value(0.86)).current;
-  const wordOpacity = useRef(new Animated.Value(0)).current;
-  const wordTranslateY = useRef(new Animated.Value(12)).current;
-  const screenOpacity = useRef(new Animated.Value(1)).current;
+  const logoScale = useRef(new Animated.Value(0.7)).current;
+
+  const letterAnims = useMemo(
+    () => LETTERS.map(() => createLetterAnim()),
+    [],
+  );
 
   useEffect(() => {
     let isMounted = true;
-    let holdTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const popInLogo = () =>
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: LOGO_POP_IN_MS * 0.75,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoScale, {
+          toValue: 1,
+          duration: LOGO_POP_IN_MS,
+          easing: Easing.out(Easing.back(1.55)),
+          useNativeDriver: true,
+        }),
+      ]);
+
+    const popOutLogo = () =>
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 0,
+          duration: LOGO_POP_OUT_MS,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(logoScale, {
+          toValue: 0.78,
+          duration: LOGO_POP_OUT_MS,
+          easing: Easing.in(Easing.back(1.2)),
+          useNativeDriver: true,
+        }),
+      ]);
+
+    /** Soft blur-to-sharp letter reveal — not a scale pop. */
+    const revealLetter = (anim: LetterAnim) =>
+      Animated.parallel([
+        Animated.timing(anim.opacity, {
+          toValue: 1,
+          duration: LETTER_REVEAL_MS * 0.85,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(anim.translateY, {
+          toValue: 0,
+          duration: LETTER_REVEAL_MS,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(anim.blur, {
+          toValue: 0,
+          duration: LETTER_REVEAL_MS,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: false,
+        }),
+      ]);
+
+    const hideLetter = (anim: LetterAnim) =>
+      Animated.parallel([
+        Animated.timing(anim.opacity, {
+          toValue: 0,
+          duration: LETTER_OUT_MS,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(anim.blur, {
+          toValue: 10,
+          duration: LETTER_OUT_MS,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: false,
+        }),
+        Animated.timing(anim.translateY, {
+          toValue: -4,
+          duration: LETTER_OUT_MS,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]);
 
     const advance = () => {
       if (!isMounted || hasAdvanced.current) return;
       hasAdvanced.current = true;
-
-      Animated.timing(screenOpacity, {
-        toValue: 0,
-        duration: FADE_OUT_MS,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished && isMounted) {
-          router.replace("/welcome");
-        }
-      });
+      router.replace("/welcome");
     };
 
     const runIntro = async () => {
@@ -49,62 +139,45 @@ export default function IntroScreen() {
         // Splash may already be hidden on fast refresh.
       }
 
-      Animated.parallel([
-        Animated.timing(logoOpacity, {
-          toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(logoScale, {
-          toValue: 1,
-          duration: 400,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (!isMounted) return;
 
-      Animated.parallel([
-        Animated.timing(wordOpacity, {
-          toValue: 1,
-          duration: 450,
-          delay: 350,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(wordTranslateY, {
-          toValue: 0,
-          duration: 450,
-          delay: 350,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]).start();
-
-      holdTimer = setTimeout(advance, 350 + 450 + HOLD_MS);
+      Animated.sequence([
+        popInLogo(),
+        Animated.delay(GAP_AFTER_LOGO_MS),
+        Animated.stagger(
+          LETTER_STAGGER_MS,
+          letterAnims.map((anim) => revealLetter(anim)),
+        ),
+        Animated.delay(HOLD_MS),
+        Animated.stagger(
+          LETTER_OUT_STAGGER_MS,
+          [...letterAnims].reverse().map((anim) => hideLetter(anim)),
+        ),
+        Animated.delay(120),
+        popOutLogo(),
+        Animated.delay(140),
+      ]).start(({ finished }) => {
+        if (finished) advance();
+      });
     };
 
     void runIntro();
 
     return () => {
       isMounted = false;
-      if (holdTimer) clearTimeout(holdTimer);
+      logoOpacity.stopAnimation();
+      logoScale.stopAnimation();
+      for (const anim of letterAnims) {
+        anim.opacity.stopAnimation();
+        anim.translateY.stopAnimation();
+        anim.blur.stopAnimation();
+      }
     };
-  }, [
-    logoOpacity,
-    logoScale,
-    router,
-    screenOpacity,
-    wordOpacity,
-    wordTranslateY,
-  ]);
+  }, [letterAnims, logoOpacity, logoScale, router]);
 
   return (
     <View className="flex-1 bg-black">
-      <Animated.View
-        className="flex-1 items-center justify-center px-8"
-        style={{ opacity: screenOpacity }}
-      >
+      <View className="flex-1 items-center justify-center px-8">
         <Animated.View
           style={{
             opacity: logoOpacity,
@@ -119,16 +192,30 @@ export default function IntroScreen() {
           />
         </Animated.View>
 
-        <Animated.Text
-          className="mt-7 text-center text-3xl font-semibold tracking-wide text-white"
-          style={{
-            opacity: wordOpacity,
-            transform: [{ translateY: wordTranslateY }],
-          }}
+        <View
+          className="mt-7 flex-row items-center justify-center"
+          accessibilityLabel={BRAND_NAME}
         >
-          {BRAND_NAME}
-        </Animated.Text>
-      </Animated.View>
+          {LETTERS.map((letter, index) => {
+            const anim = letterAnims[index];
+            return (
+              <Animated.Text
+                key={`${letter}-${index}`}
+                className="text-3xl font-semibold text-white"
+                style={{
+                  opacity: anim.opacity,
+                  transform: [{ translateY: anim.translateY }],
+                  textShadowColor: "rgba(255,255,255,0.95)",
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: anim.blur,
+                }}
+              >
+                {letter}
+              </Animated.Text>
+            );
+          })}
+        </View>
+      </View>
     </View>
   );
 }
