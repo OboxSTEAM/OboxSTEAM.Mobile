@@ -19,7 +19,7 @@ Expo Router · TypeScript · NativeWind v4 · Zod · react-hook-form · **pnpm o
 
 ## Before coding
 
-1. **Review** — Grep/Read until `.codegraph/` exists; then prefer Codegraph for TS/TSX.
+1. **Review** — Codegraph MCP first for TS/TSX; Grep/Read only for configs, docs, env, rules, or stale/non-indexed files.
 2. **Plan** — multi-step work; preserve names/literals unless change required.
 3. **Implement** — small increments; smoke on Expo Go (physical phone preferred).
 4. **Secure** — auth tokens only in SecureStore; no secrets in `EXPO_PUBLIC_*` beyond API base URL.
