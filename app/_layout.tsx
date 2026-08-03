@@ -1,23 +1,31 @@
 import "../global.css";
 
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+
+void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: "#FAFAF5" },
-          headerTintColor: "#2D2D2D",
+          headerShown: false,
+          animation: "fade",
           contentStyle: { backgroundColor: "#FAFAF5" },
         }}
       >
         <Stack.Screen
           name="index"
-          options={{ title: "OboxSTEAM Parent" }}
+          options={{
+            animation: "none",
+            contentStyle: { backgroundColor: "#000000" },
+          }}
         />
+        <Stack.Screen name="(guest)" />
+        <Stack.Screen name="(auth)" />
       </Stack>
     </>
   );
