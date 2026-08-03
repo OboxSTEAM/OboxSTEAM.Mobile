@@ -1,4 +1,5 @@
 import { BRAND_LOGO, BRAND_NAME } from "@/lib/brand";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useMemo, useRef } from "react";
@@ -32,11 +33,17 @@ function createLetterAnim(): LetterAnim {
 
 /**
  * Cold-start intro: logo pops, then each letter of OboxSTEAM
- * soft-reveals (blur → sharp), then exits and opens Welcome.
+ * soft-reveals (blur → sharp), then routes by auth status.
  */
 export default function IntroScreen() {
   const router = useRouter();
+  const { status } = useAuth();
   const hasAdvanced = useRef(false);
+  const authStatusRef = useRef(status);
+
+  useEffect(() => {
+    authStatusRef.current = status;
+  }, [status]);
 
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.7)).current;
@@ -126,10 +133,29 @@ export default function IntroScreen() {
         }),
       ]);
 
-    const advance = () => {
+    const waitForAuthReady = async () => {
+      const started = Date.now();
+      while (isMounted && authStatusRef.current === "bootstrapping") {
+        if (Date.now() - started > 12_000) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+    };
+
+    const advance = async () => {
       if (!isMounted || hasAdvanced.current) return;
       hasAdvanced.current = true;
-      router.replace("/welcome");
+
+      await waitForAuthReady();
+      if (!isMounted) return;
+
+      const next = authStatusRef.current;
+      if (next === "authenticated") {
+        router.replace("/(app)");
+      } else if (next === "blocked") {
+        router.replace("/blocked");
+      } else {
+        router.replace("/welcome");
+      }
     };
 
     const runIntro = async () => {
@@ -157,7 +183,7 @@ export default function IntroScreen() {
         popOutLogo(),
         Animated.delay(140),
       ]).start(({ finished }) => {
-        if (finished) advance();
+        if (finished) void advance();
       });
     };
 
