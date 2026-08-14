@@ -6,6 +6,7 @@ type ChildAvatarProps = {
   name: string;
   avatarUrl?: string | null;
   size?: number;
+  radius?: number;
 };
 
 function initials(name: string): string {
@@ -15,12 +16,19 @@ function initials(name: string): string {
   return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
 }
 
-export function ChildAvatar({ name, avatarUrl, size = 48 }: ChildAvatarProps) {
+export function ChildAvatar({
+  name,
+  avatarUrl,
+  size = 48,
+  radius,
+}: ChildAvatarProps) {
+  const borderRadius = radius ?? size / 2;
+
   if (avatarUrl) {
     return (
       <Image
         source={{ uri: avatarUrl }}
-        style={{ width: size, height: size, borderRadius: size / 2 }}
+        style={{ width: size, height: size, borderRadius }}
         accessibilityLabel={`Ảnh đại diện ${name}`}
       />
     );
@@ -32,7 +40,7 @@ export function ChildAvatar({ name, avatarUrl, size = 48 }: ChildAvatarProps) {
       style={{
         width: size,
         height: size,
-        borderRadius: size / 2,
+        borderRadius,
         backgroundColor: `${colors.steam.engineering}22`,
       }}
       accessibilityLabel={`Ảnh đại diện ${name}`}

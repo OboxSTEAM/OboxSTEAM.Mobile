@@ -13,6 +13,8 @@ import {
   enrollmentStatusLabel,
   formatPercent,
   progressEventLabel,
+  visibleBlockers,
+  visibleEnrollments,
 } from "@/lib/parent/labels";
 import { colors } from "@/lib/tokens/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -36,7 +38,7 @@ function EnrollmentCard({
   const moduleName =
     enrollment.currentModule?.moduleName?.trim() || "Chưa có module hiện tại";
   const activityName = enrollment.currentActivity?.activityName?.trim();
-  const blockers = enrollment.blockers ?? [];
+  const blockers = visibleBlockers(enrollment.blockers);
 
   return (
     <Pressable
@@ -202,7 +204,7 @@ export default function ChildProgressionScreen() {
   const student = data.student;
   const name = childDisplayName(student);
   const summary = data.summary;
-  const enrollments = data.enrollments ?? [];
+  const enrollments = visibleEnrollments(data.enrollments);
   const milestones = (data.recentMilestones ?? []).slice(0, 5);
 
   return (
@@ -259,7 +261,7 @@ export default function ChildProgressionScreen() {
       {enrollments.length === 0 ? (
         <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-6">
           <Text className="text-center text-sm text-muted-foreground">
-            Chưa có chương trình.
+            Chưa có chương trình đang học.
           </Text>
         </View>
       ) : (

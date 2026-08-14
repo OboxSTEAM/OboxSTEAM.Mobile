@@ -1,4 +1,5 @@
-import { View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, View } from "react-native";
 
 import { colors } from "@/lib/tokens/colors";
 
@@ -16,6 +17,16 @@ export function ProgressBar({
   height = 8,
 }: ProgressBarProps) {
   const clamped = Math.max(0, Math.min(100, percent ?? 0));
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(progress, {
+      toValue: clamped / 100,
+      duration: 700,
+      easing: Easing.bezier(0.32, 0.72, 0, 1),
+      useNativeDriver: true,
+    }).start();
+  }, [clamped, progress]);
 
   return (
     <View
@@ -24,9 +35,13 @@ export function ProgressBar({
       accessibilityRole="progressbar"
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped) }}
     >
-      <View
-        className="h-full rounded-full"
-        style={{ width: `${clamped}%`, backgroundColor: color }}
+      <Animated.View
+        className="h-full w-full rounded-full"
+        style={{
+          backgroundColor: color,
+          transformOrigin: "0% 50%",
+          transform: [{ scaleX: progress }],
+        }}
       />
     </View>
   );

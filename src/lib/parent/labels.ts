@@ -147,6 +147,31 @@ export function childDisplayName(
   );
 }
 
+/** Vietnamese given name is the last token. */
+export function givenName(
+  fullName?: string | null,
+  fallback = "Phụ huynh",
+): string {
+  const trimmed = fullName?.trim();
+  if (!trimmed) return fallback;
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  return parts[parts.length - 1] ?? fallback;
+}
+
+const PAYMENT_SCOPE = "PendingPayment";
+
+export function visibleEnrollments(
+  enrollments?: ParentEnrollmentBrief[] | null,
+): ParentEnrollmentBrief[] {
+  return (enrollments ?? []).filter((item) => item.status !== PAYMENT_SCOPE);
+}
+
+export function visibleBlockers<T extends { code?: string | null }>(
+  blockers?: T[] | null,
+): T[] {
+  return (blockers ?? []).filter((item) => item.code !== PAYMENT_SCOPE);
+}
+
 export function formatPercent(value?: number | null): string {
   if (value == null || Number.isNaN(value)) return "—";
   const rounded = Math.round(value);
@@ -166,20 +191,43 @@ function pickPreviewEnrollment(
   )[0]!;
 }
 
+export type ProgressPreview = {
+  programName: string;
+  percent: number | null;
+  moduleName: string | null;
+};
+
+export function progressPreview(
+  progression?: ParentChildProgression | null,
+): ProgressPreview | null {
+  if (!progression) return null;
+
+  const preview = pickPreviewEnrollment(
+    visibleEnrollments(progression.enrollments),
+  );
+  if (!preview) return null;
+
+  return {
+    programName: preview.programName?.trim() || "Chương trình",
+    percent: preview.progressPercent ?? null,
+    moduleName: preview.currentModule?.moduleName?.trim() || null,
+  };
+}
+
 /**
  * One-line home-card summary:
- * "Đang học: Robotics Foundation · 62%" or "Chưa có chương trình".
+ * "Đang học: Robotics Foundation · 62%" or "Chưa có chương trình đang học".
  */
 export function progressSummaryLine(
   progression?: ParentChildProgression | null,
 ): string {
   if (!progression) return "Đang tải tiến độ…";
 
-  const enrollments = progression.enrollments ?? [];
-  if (enrollments.length === 0) return "Chưa có chương trình";
+  const enrollments = visibleEnrollments(progression.enrollments);
+  if (enrollments.length === 0) return "Chưa có chương trình đang học";
 
   const preview = pickPreviewEnrollment(enrollments);
-  if (!preview) return "Chưa có chương trình";
+  if (!preview) return "Chưa có chương trình đang học";
 
   const name = preview.programName?.trim() || "Chương trình";
   const percent = formatPercent(preview.progressPercent);
