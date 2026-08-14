@@ -1,25 +1,26 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
+import { ModuleListItem } from "@/components/module-timeline-item";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScreenState } from "@/components/screen-state";
 import { StatusPill } from "@/components/status-pill";
 import {
   getEnrollmentProgression,
-  type ParentAssignmentOutcome,
   type ParentEnrollmentProgression,
-  type ParentModuleProgress,
 } from "@/lib/api";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import { formatDateVi, formatRelativeVi } from "@/lib/format/date";
 import {
-  assignmentTypeLabel,
   enrollmentStatusLabel,
   formatPercent,
-  moduleTypeLabel,
-  outcomeLabel,
 } from "@/lib/parent/labels";
+import {
+  completedModuleCount,
+  defaultExpandedModuleIndex,
+  enrollmentScoreSummary,
+} from "@/lib/parent/progress-insights";
 import { colors } from "@/lib/tokens/colors";
-import { useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { Stack, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -27,101 +28,15 @@ import {
   View,
 } from "react-native";
 
-function AssignmentRow({ assignment }: { assignment: ParentAssignmentOutcome }) {
-  const typeLabel = assignmentTypeLabel(assignment.assignmentType);
-  const scoreText =
-    assignment.score != null && assignment.maxPoints != null
-      ? `${assignment.score}/${assignment.maxPoints}`
-      : assignment.score != null
-        ? `${assignment.score}`
-        : null;
-
+function EnrollmentSkeleton() {
   return (
-    <View className="mt-2 rounded-xl bg-secondary px-3 py-2">
-      <Text className="text-sm font-medium text-foreground">
-        {assignment.title?.trim() || "Bài tập"}
-      </Text>
-      <Text className="mt-0.5 text-xs text-muted-foreground">
-        {typeLabel}
-        {assignment.status ? ` · ${assignment.status}` : ""}
-        {scoreText ? ` · ${scoreText}` : ""}
-      </Text>
-      {assignment.dueDate ? (
-        <Text className="mt-0.5 text-xs text-muted-foreground">
-          Hạn: {formatDateVi(assignment.dueDate)}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
-function ModuleCard({ module }: { module: ParentModuleProgress }) {
-  const status = enrollmentStatusLabel(module.status);
-  const outcome = outcomeLabel(module.outcomeLabel);
-  const completed = module.activityStats?.completed ?? 0;
-  const total = module.activityStats?.total ?? 0;
-  const assignments = module.assignments ?? [];
-
-  return (
-    <View className="mb-3 rounded-2xl border border-border bg-card px-4 py-3">
-      <View className="flex-row items-start justify-between gap-3">
-        <View className="flex-1">
-          <Text className="text-xs text-muted-foreground">
-            Module {module.moduleOrder ?? "—"} · {moduleTypeLabel(module.moduleType)}
-          </Text>
-          <Text className="mt-0.5 text-base font-semibold text-foreground">
-            {module.moduleName?.trim() || "Module"}
-          </Text>
-        </View>
-        <StatusPill
-          label={module.outcomeLabel ? outcome.label : status.label}
-          tone={module.outcomeLabel ? outcome.tone : status.tone}
-        />
-      </View>
-
-      {module.isLocked ? (
-        <Text className="mt-2 text-sm text-muted-foreground">
-          {module.lockReason?.trim() || "Module đang bị khóa"}
-        </Text>
-      ) : null}
-
-      <View className="mt-3">
-        <View className="mb-1.5 flex-row items-center justify-between">
-          <Text className="text-xs text-muted-foreground">Tiến độ</Text>
-          <Text className="text-xs font-medium text-foreground">
-            {formatPercent(module.progressPercent)}
-          </Text>
-        </View>
-        <ProgressBar percent={module.progressPercent} />
-      </View>
-
-      <Text className="mt-2 text-xs text-muted-foreground">
-        Hoạt động: {completed}/{total}
-        {module.attemptNumber != null ? ` · Lần thử ${module.attemptNumber}` : ""}
-        {module.finalGrade != null ? ` · Điểm ${module.finalGrade}` : ""}
-      </Text>
-
-      {module.completedAt ? (
-        <Text className="mt-1 text-xs text-muted-foreground">
-          Hoàn thành: {formatRelativeVi(module.completedAt)}
-        </Text>
-      ) : module.startedAt ? (
-        <Text className="mt-1 text-xs text-muted-foreground">
-          Bắt đầu: {formatRelativeVi(module.startedAt)}
-        </Text>
-      ) : null}
-
-      {assignments.length > 0 ? (
-        <View className="mt-2">
-          <Text className="text-xs font-medium text-foreground">Bài tập</Text>
-          {assignments.map((assignment, index) => (
-            <AssignmentRow
-              key={assignment.assignmentId ?? `assignment-${index}`}
-              assignment={assignment}
-            />
-          ))}
-        </View>
-      ) : null}
+    <View className="px-4 pt-2">
+      <View className="h-28 rounded-2xl bg-secondary" />
+      <View className="mt-4 h-10 rounded-xl bg-secondary" />
+      <View className="mt-5 h-5 w-24 rounded-lg bg-secondary" />
+      <View className="mt-3 h-24 rounded-2xl bg-secondary" />
+      <View className="mt-3 h-24 rounded-2xl bg-secondary" />
+      <View className="mt-3 h-24 rounded-2xl bg-secondary" />
     </View>
   );
 }
@@ -144,6 +59,8 @@ export default function EnrollmentDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [didInitExpand, setDidInitExpand] = useState(false);
 
   const load = useCallback(
     async (mode: "initial" | "refresh" = "initial") => {
@@ -174,6 +91,24 @@ export default function EnrollmentDetailScreen() {
     void load("initial");
   }, [load]);
 
+  const modules = useMemo(
+    () =>
+      [...(data?.modules ?? [])].sort(
+        (a, b) => (a.moduleOrder ?? 0) - (b.moduleOrder ?? 0),
+      ),
+    [data?.modules],
+  );
+
+  useEffect(() => {
+    if (!data || didInitExpand || modules.length === 0) return;
+    const index = defaultExpandedModuleIndex(modules);
+    const target = modules[index];
+    const id =
+      target?.moduleId ?? target?.moduleEnrollmentId ?? `module-${index}`;
+    setExpandedId(id);
+    setDidInitExpand(true);
+  }, [data, didInitExpand, modules]);
+
   if (!studentId || !enrollmentId) {
     return (
       <ScreenState
@@ -185,7 +120,11 @@ export default function EnrollmentDetailScreen() {
   }
 
   if (isLoading) {
-    return <ScreenState kind="loading" message="Đang tải chi tiết…" />;
+    return (
+      <View className="flex-1 bg-background">
+        <EnrollmentSkeleton />
+      </View>
+    );
   }
 
   if (!data && error) {
@@ -211,93 +150,178 @@ export default function EnrollmentDetailScreen() {
 
   const header = data.enrollment;
   const status = enrollmentStatusLabel(header.status);
-  const modules = [...(data.modules ?? [])].sort(
-    (a, b) => (a.moduleOrder ?? 0) - (b.moduleOrder ?? 0),
-  );
+  const programTitle = header.programName?.trim() || "Chương trình";
+  const moduleCounts = completedModuleCount(modules);
+  const scoreSummary = enrollmentScoreSummary(modules);
+  const averageText =
+    scoreSummary.averageGrade != null
+      ? formatCompact(scoreSummary.averageGrade)
+      : "—";
 
   return (
-    <ScrollView
-      className="flex-1 bg-background"
-      contentContainerStyle={{
-        paddingHorizontal: 16,
-        paddingTop: 8,
-        paddingBottom: DOCK_CONTENT_PADDING,
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={isRefreshing}
-          onRefresh={() => void load("refresh")}
-          tintColor={colors.primary}
-        />
-      }
-    >
-      <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-3">
-        <View className="flex-row items-start justify-between gap-3">
-          <View className="flex-1">
-            <Text className="text-lg font-bold text-foreground">
-              {header.programName?.trim() || "Chương trình"}
-            </Text>
-            {header.programCode ? (
-              <Text className="mt-0.5 text-sm text-muted-foreground">
-                {header.programCode}
-              </Text>
-            ) : null}
-          </View>
-          <StatusPill label={status.label} tone={status.tone} />
-        </View>
-
-        <View className="mt-3">
-          <View className="mb-1.5 flex-row items-center justify-between">
-            <Text className="text-xs text-muted-foreground">Tiến độ</Text>
-            <Text className="text-xs font-medium text-foreground">
-              {formatPercent(header.progressPercent)}
-            </Text>
-          </View>
-          <ProgressBar percent={header.progressPercent} />
-        </View>
-
-        <Text className="mt-2 text-xs text-muted-foreground">
-          Truy cập gần nhất: {formatRelativeVi(header.lastAccessedAt)}
-        </Text>
-      </View>
-
-      {data.classInfo?.className || data.classInfo?.mentorName ? (
-        <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-3">
-          <Text className="text-sm font-semibold text-foreground">Lớp học</Text>
-          {data.classInfo.className ? (
-            <Text className="mt-1 text-sm text-foreground">
-              {data.classInfo.className}
-            </Text>
-          ) : null}
-          {data.classInfo.mentorName ? (
-            <Text className="mt-0.5 text-sm text-muted-foreground">
-              Mentor: {data.classInfo.mentorName}
-            </Text>
-          ) : null}
-        </View>
-      ) : null}
-
-      <Text className="mb-2 text-base font-semibold text-foreground">
-        Timeline module
-      </Text>
-      {modules.length === 0 ? (
-        <View className="rounded-2xl border border-border bg-card px-4 py-6">
-          <Text className="text-center text-sm text-muted-foreground">
-            Chưa có module.
-          </Text>
-        </View>
-      ) : (
-        modules.map((module, index) => (
-          <ModuleCard
-            key={module.moduleId ?? `module-${index}`}
-            module={module}
+    <>
+      <Stack.Screen options={{ title: programTitle }} />
+      <ScrollView
+        className="flex-1 bg-background"
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 8,
+          paddingBottom: DOCK_CONTENT_PADDING,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={() => void load("refresh")}
+            tintColor={colors.primary}
           />
-        ))
-      )}
+        }
+      >
+        <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-3">
+          <View className="flex-row items-start justify-between gap-3">
+            <View className="min-w-0 flex-1">
+              <Text className="text-lg font-bold text-foreground">
+                {programTitle}
+              </Text>
+              {header.programCode ? (
+                <Text className="mt-0.5 text-sm text-muted-foreground">
+                  {header.programCode}
+                </Text>
+              ) : null}
+            </View>
+            <StatusPill label={status.label} tone={status.tone} />
+          </View>
 
-      {error ? (
-        <Text className="mt-3 text-sm text-primary">{error}</Text>
-      ) : null}
-    </ScrollView>
+          <View className="mt-3">
+            <View className="mb-1.5 flex-row items-center justify-between">
+              <Text className="text-xs text-muted-foreground">Tiến độ</Text>
+              <Text
+                className="text-xs font-medium text-foreground"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {formatPercent(header.progressPercent)}
+              </Text>
+            </View>
+            <ProgressBar percent={header.progressPercent} />
+          </View>
+
+          <Text className="mt-2 text-xs text-muted-foreground">
+            {moduleCounts.completed}/{moduleCounts.total} module hoàn thành
+            {" · "}
+            Truy cập {formatRelativeVi(header.lastAccessedAt)}
+          </Text>
+
+          {(data.classInfo?.className || data.classInfo?.mentorName) && (
+            <Text className="mt-1 text-xs text-muted-foreground">
+              {[
+                data.classInfo.className,
+                data.classInfo.mentorName
+                  ? `Mentor: ${data.classInfo.mentorName}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </Text>
+          )}
+
+          {(header.enrolledAt || header.startedAt || header.completedAt) && (
+            <Text className="mt-1 text-xs text-muted-foreground">
+              {[
+                header.enrolledAt
+                  ? `Ghi danh ${formatDateVi(header.enrolledAt)}`
+                  : null,
+                header.startedAt
+                  ? `Bắt đầu ${formatDateVi(header.startedAt)}`
+                  : null,
+                header.completedAt
+                  ? `Hoàn thành ${formatDateVi(header.completedAt)}`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </Text>
+          )}
+        </View>
+
+        <View className="mb-4 flex-row rounded-2xl border border-border bg-card px-3 py-3">
+          <SummaryCell label="Điểm TB" value={averageText} />
+          <View className="mx-2 w-px self-stretch bg-border" />
+          <SummaryCell
+            label="Đã chấm"
+            value={`${scoreSummary.gradedCount}/${scoreSummary.totalAssignments}`}
+          />
+          <View className="mx-2 w-px self-stretch bg-border" />
+          <SummaryCell
+            label="Cần chú ý"
+            value={`${scoreSummary.attentionCount}`}
+            emphasize={scoreSummary.attentionCount > 0}
+          />
+        </View>
+
+        <Text className="mb-2 text-base font-semibold text-foreground">
+          Module
+        </Text>
+        {modules.length === 0 ? (
+          <View className="rounded-2xl border border-border bg-card px-4 py-6">
+            <Text className="text-center text-sm text-muted-foreground">
+              Chưa có module.
+            </Text>
+          </View>
+        ) : (
+          modules.map((module, index) => {
+            const id =
+              module.moduleId ??
+              module.moduleEnrollmentId ??
+              `module-${index}`;
+            return (
+              <ModuleListItem
+                key={id}
+                module={module}
+                index={index}
+                expanded={expandedId === id}
+                onToggle={() =>
+                  setExpandedId((current) => (current === id ? null : id))
+                }
+              />
+            );
+          })
+        )}
+
+        {error ? (
+          <Text className="mt-3 text-sm text-primary">{error}</Text>
+        ) : null}
+      </ScrollView>
+    </>
   );
+}
+
+function SummaryCell({
+  label,
+  value,
+  emphasize = false,
+}: {
+  label: string;
+  value: string;
+  emphasize?: boolean;
+}) {
+  return (
+    <View className="flex-1 items-center px-1">
+      <Text
+        className="text-base font-semibold"
+        style={{
+          color: emphasize ? colors.primary : colors.foreground,
+          fontVariant: ["tabular-nums"],
+        }}
+        numberOfLines={1}
+      >
+        {value}
+      </Text>
+      <Text className="mt-0.5 text-center text-[11px] text-muted-foreground">
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function formatCompact(value: number): string {
+  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }

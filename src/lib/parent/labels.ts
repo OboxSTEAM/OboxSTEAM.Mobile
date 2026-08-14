@@ -87,6 +87,13 @@ const ASSIGNMENT_TYPE: Record<string, string> = {
   Quiz: "Trắc nghiệm",
 };
 
+const ASSIGNMENT_STATUS: Record<string, { label: string; tone: LabelTone }> = {
+  Pending: { label: "Chưa nộp", tone: "muted" },
+  TurnedIn: { label: "Đã nộp", tone: "info" },
+  Graded: { label: "Đã chấm", tone: "success" },
+  ReturnedForRevision: { label: "Cần sửa lại", tone: "warning" },
+};
+
 function lookupLabel(
   map: Record<string, string>,
   value?: string | null,
@@ -134,6 +141,26 @@ export function progressEventLabel(value?: string | null) {
 
 export function assignmentTypeLabel(value?: string | null) {
   return lookupLabel(ASSIGNMENT_TYPE, value);
+}
+
+export function assignmentStatusLabel(value?: string | null) {
+  return lookupLabeledTone(ASSIGNMENT_STATUS, value);
+}
+
+/** "8/10" or "8" or "—" when nothing to show. */
+export function formatScore(
+  score?: number | null,
+  maxPoints?: number | null,
+): string {
+  if (score == null || Number.isNaN(score)) return "—";
+  if (maxPoints != null && !Number.isNaN(maxPoints)) {
+    return `${formatNumber(score)}/${formatNumber(maxPoints)}`;
+  }
+  return formatNumber(score);
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
 }
 
 export function childDisplayName(

@@ -136,6 +136,7 @@ export const parentAssignmentOutcomeSchema = z
     submittedAt: apiDate,
     gradedAt: apiDate,
     attemptUsed: z.number().nullish(),
+    maxAttempts: z.number().nullish(),
   })
   .passthrough();
 
