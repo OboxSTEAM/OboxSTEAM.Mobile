@@ -31,7 +31,7 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/(app)");
+      router.replace("/children");
     } else if (status === "blocked") {
       router.replace("/blocked");
     }

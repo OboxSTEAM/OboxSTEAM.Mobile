@@ -150,7 +150,7 @@ export default function IntroScreen() {
 
       const next = authStatusRef.current;
       if (next === "authenticated") {
-        router.replace("/(app)");
+        router.replace("/children");
       } else if (next === "blocked") {
         router.replace("/blocked");
       } else {
