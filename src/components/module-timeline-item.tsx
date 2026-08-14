@@ -3,10 +3,8 @@ import {
   Animated,
   Easing,
   LayoutAnimation,
-  Platform,
   Pressable,
   Text,
-  UIManager,
   View,
 } from "react-native";
 import { ChevronDown, Lock } from "lucide-react-native";
@@ -26,13 +24,6 @@ import { moduleAssignmentDigest } from "@/lib/parent/progress-insights";
 import { colors } from "@/lib/tokens/colors";
 
 const CHEVRON_MS = 220;
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 /** Native layout animation — avoids JS-thread height tweening. */
 export function configureModuleExpandAnimation() {
