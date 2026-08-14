@@ -3,6 +3,7 @@ import {
   getAuthSession,
   persistAuthSession,
 } from "@/lib/auth/session";
+import { emitAuthSessionInvalidated } from "@/lib/auth/session-events";
 import { getApiBaseUrl } from "@/lib/api/config";
 import { ApiRequestError } from "@/lib/api/errors";
 
@@ -22,24 +23,39 @@ type RefreshResult = {
 
 let refreshPromise: Promise<RefreshResult | null> | null = null;
 
+async function invalidateSession(): Promise<void> {
+  await clearAuthSession();
+  emitAuthSessionInvalidated();
+}
+
+/**
+ * Exchange refresh token for a new JWT pair. Single-flight so parallel 401s
+ * share one refresh. On failure, clears SecureStore and notifies AuthProvider.
+ */
 async function refreshAccessToken(): Promise<RefreshResult | null> {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     const session = await getAuthSession();
     if (!session?.refreshToken) {
-      await clearAuthSession();
+      await invalidateSession();
       return null;
     }
 
-    const response = await fetch(`${getApiBaseUrl()}/api/auth/refresh-token`, {
-      method: "POST",
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refreshToken: session.refreshToken }),
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${getApiBaseUrl()}/api/auth/refresh-token`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken: session.refreshToken }),
+      });
+    } catch {
+      // Network blip — keep stored tokens so the next request can retry.
+      return null;
+    }
 
     let json: unknown = null;
     try {
@@ -50,21 +66,23 @@ async function refreshAccessToken(): Promise<RefreshResult | null> {
 
     const envelope = json as {
       isSuccess?: boolean;
-      value?: { data?: { accessToken?: string | null; refreshToken?: string | null } };
+      value?: {
+        data?: {
+          accessToken?: string | null;
+          refreshToken?: string | null;
+        };
+      };
     } | null;
 
     const accessToken = envelope?.value?.data?.accessToken ?? null;
     const refreshToken = envelope?.value?.data?.refreshToken ?? null;
 
     if (!response.ok || !envelope?.isSuccess || !accessToken || !refreshToken) {
-      await clearAuthSession();
+      await invalidateSession();
       return null;
     }
 
-    await persistAuthSession(
-      { accessToken, refreshToken },
-      session.user,
-    );
+    await persistAuthSession({ accessToken, refreshToken }, session.user);
     return { accessToken, refreshToken };
   })().finally(() => {
     refreshPromise = null;
@@ -92,6 +110,8 @@ async function buildHeaders(
 
 /**
  * Low-level fetch with SecureStore Bearer + one-shot refresh on 401.
+ * Failed refresh (or still-401 after refresh) clears the session and
+ * notifies AuthProvider so the UI returns to guest transparently.
  */
 export async function apiFetch(
   path: string,
@@ -123,7 +143,13 @@ export async function apiFetch(
     if (refreshed) {
       const retryHeaders = await buildHeaders(options, refreshed.accessToken);
       response = await fetch(url, { ...init, headers: retryHeaders });
+
+      // Access was refreshed but the retry is still unauthorized — session is unusable.
+      if (response.status === 401) {
+        await invalidateSession();
+      }
     }
+    // refreshed === null: session already invalidated (or network blip on refresh).
   }
 
   return response;

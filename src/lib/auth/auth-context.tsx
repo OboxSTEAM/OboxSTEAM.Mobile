@@ -1,4 +1,5 @@
 import { getCurrentUser, login as apiLogin, type UserProfile } from "@/lib/api";
+import { ApiRequestError } from "@/lib/api/errors";
 import { isParentRole } from "@/lib/auth/roles";
 import {
   clearAuthSession,
@@ -6,6 +7,7 @@ import {
   persistAuthSession,
   type StoredAuthUser,
 } from "@/lib/auth/session";
+import { onAuthSessionInvalidated } from "@/lib/auth/session-events";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import {
   createContext,
@@ -44,6 +46,10 @@ function toStoredUser(profile: UserProfile): StoredAuthUser {
   };
 }
 
+function isUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiRequestError && error.status === 401;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("bootstrapping");
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -63,40 +69,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("authenticated");
   }, []);
 
+  const resetToGuest = useCallback(() => {
+    setUser(null);
+    setBlockReason(null);
+    setStatus("guest");
+  }, []);
+
+  // apiFetch emits this when refresh fails or the session is no longer valid.
+  useEffect(() => {
+    return onAuthSessionInvalidated(() => {
+      resetToGuest();
+    });
+  }, [resetToGuest]);
+
   const bootstrap = useCallback(async () => {
     try {
       const session = await getAuthSession();
-      if (!session?.accessToken) {
-        setUser(null);
-        setBlockReason(null);
-        setStatus("guest");
+      if (!session?.accessToken && !session?.refreshToken) {
+        resetToGuest();
         return;
       }
 
+      // getCurrentUser goes through apiFetch — expired access auto-refreshes once.
       const value = await getCurrentUser();
       const profile = value.data;
       if (!profile) {
         await clearAuthSession();
-        setUser(null);
-        setStatus("guest");
+        resetToGuest();
+        return;
+      }
+
+      // Prefer tokens written by a successful mid-flight refresh.
+      const latest = await getAuthSession();
+      if (!latest?.accessToken || !latest.refreshToken) {
+        await clearAuthSession();
+        resetToGuest();
         return;
       }
 
       await persistAuthSession(
         {
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
+          accessToken: latest.accessToken,
+          refreshToken: latest.refreshToken,
         },
         toStoredUser(profile),
       );
       applyProfile(profile);
-    } catch {
-      await clearAuthSession();
-      setUser(null);
-      setBlockReason(null);
-      setStatus("guest");
+    } catch (error) {
+      // Client already cleared SecureStore when refresh was rejected.
+      // Network blips leave tokens intact for the next launch / retry.
+      if (isUnauthorizedError(error)) {
+        const still = await getAuthSession();
+        if (!still?.refreshToken) {
+          resetToGuest();
+          return;
+        }
+      }
+      resetToGuest();
     }
-  }, [applyProfile]);
+  }, [applyProfile, resetToGuest]);
 
   useEffect(() => {
     void bootstrap();
@@ -127,30 +158,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await clearAuthSession();
-    setUser(null);
-    setBlockReason(null);
-    setStatus("guest");
-  }, []);
+    resetToGuest();
+  }, [resetToGuest]);
 
   const refreshProfile = useCallback(async () => {
-    const value = await getCurrentUser();
-    const profile = value.data;
-    if (!profile) {
-      await signOut();
-      return;
+    try {
+      const value = await getCurrentUser();
+      const profile = value.data;
+      if (!profile) {
+        await signOut();
+        return;
+      }
+      const session = await getAuthSession();
+      if (session) {
+        await persistAuthSession(
+          {
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken,
+          },
+          toStoredUser(profile),
+        );
+      }
+      applyProfile(profile);
+    } catch (error) {
+      if (isUnauthorizedError(error)) {
+        const still = await getAuthSession();
+        if (!still?.refreshToken) {
+          resetToGuest();
+          return;
+        }
+      }
+      throw error;
     }
-    const session = await getAuthSession();
-    if (session) {
-      await persistAuthSession(
-        {
-          accessToken: session.accessToken,
-          refreshToken: session.refreshToken,
-        },
-        toStoredUser(profile),
-      );
-    }
-    applyProfile(profile);
-  }, [applyProfile, signOut]);
+  }, [applyProfile, resetToGuest, signOut]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
