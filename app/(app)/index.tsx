@@ -1,6 +1,7 @@
 import { getParentLinks, type ParentLink } from "@/lib/api";
 import { useAuth } from "@/lib/auth/auth-context";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
+import { childDisplayName } from "@/lib/parent/labels";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,17 +11,6 @@ import {
   Text,
   View,
 } from "react-native";
-
-function linkTitle(link: ParentLink): string {
-  return (
-    link.studentName?.trim() ||
-    link.fullName?.trim() ||
-    link.studentEmail?.trim() ||
-    link.email?.trim() ||
-    link.studentCode?.trim() ||
-    "Học viên"
-  );
-}
 
 export default function ChildrenHomeScreen() {
   const { user, signOut } = useAuth();
@@ -88,9 +78,7 @@ export default function ChildrenHomeScreen() {
       ) : (
         <FlatList
           data={links}
-          keyExtractor={(item, index) =>
-            item.id || item.studentId || `link-${index}`
-          }
+          keyExtractor={(item) => item.linkedUserId}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -112,13 +100,16 @@ export default function ChildrenHomeScreen() {
           renderItem={({ item }) => (
             <View className="mb-3 rounded-2xl border border-border bg-card px-4 py-3">
               <Text className="text-base font-semibold text-foreground">
-                {linkTitle(item)}
+                {childDisplayName(item)}
               </Text>
-              {item.status ? (
+              {item.code ? (
                 <Text className="mt-1 text-sm text-muted-foreground">
-                  Trạng thái: {item.status}
+                  {item.code}
                 </Text>
               ) : null}
+              <Text className="mt-1 text-sm text-muted-foreground">
+                {item.isVerified ? "Đã xác minh" : "Chưa xác minh"}
+              </Text>
             </View>
           )}
         />

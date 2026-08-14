@@ -1,18 +1,25 @@
 import { z } from "zod";
 
-/** Parent–student link row. Swagger leaves `/api/parent/links` untyped — keep loose. */
-export const parentLinkSchema = z
+/**
+ * Linked child row. Same shape from `GET /api/parent/links` (untyped in Swagger,
+ * confirmed against the live response) and `student` in the progression brief.
+ */
+export const parentLinkedStudentSchema = z
   .object({
-    id: z.string().optional(),
-    studentId: z.string().optional(),
-    studentCode: z.string().nullable().optional(),
-    studentName: z.string().nullable().optional(),
-    fullName: z.string().nullable().optional(),
-    email: z.string().nullable().optional(),
-    studentEmail: z.string().nullable().optional(),
-    status: z.string().nullable().optional(),
-    avatarUrl: z.string().nullable().optional(),
+    linkedUserId: z.string(),
+    code: z.string().nullish(),
+    fullName: z.string().nullish(),
+    email: z.string().nullish(),
+    phone: z.string().nullish(),
+    avatarUrl: z.string().nullish(),
+    isVerified: z.boolean().nullish(),
+    /** Swagger documents `linkedAt`; the links endpoint returns `createdAt`. */
+    linkedAt: z.string().nullish(),
+    createdAt: z.string().nullish(),
   })
   .passthrough();
 
-export type ParentLink = z.infer<typeof parentLinkSchema>;
+export type ParentLinkedStudent = z.infer<typeof parentLinkedStudentSchema>;
+
+export const parentLinkSchema = parentLinkedStudentSchema;
+export type ParentLink = ParentLinkedStudent;

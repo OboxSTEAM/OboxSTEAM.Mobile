@@ -11,8 +11,22 @@ export type { UserProfile } from "@/lib/api/account";
 export {
   approveParentLink,
   completeParentProfile,
+  getChildProgression,
+  getEnrollmentProgression,
   getParentLinks,
   parentMagicLogin,
   requestParentLink,
 } from "@/lib/api/parent";
-export type { ParentLink } from "@/lib/api/parent";
+export type {
+  ParentAssignmentOutcome,
+  ParentBlocker,
+  ParentChildProgression,
+  ParentClassInfo,
+  ParentEnrollmentBrief,
+  ParentEnrollmentHeader,
+  ParentEnrollmentProgression,
+  ParentLink,
+  ParentModuleProgress,
+  ParentProgressEvent,
+  ParentProgressionSummary,
+} from "@/lib/api/parent";
