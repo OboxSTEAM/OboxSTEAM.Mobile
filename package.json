@@ -11,7 +11,9 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "sync:api-spec": "node scripts/sync-api-spec.mjs"
+    "sync:api-spec": "node scripts/sync-api-spec.mjs",
+    "eas:login": "eas login",
+    "eas:build:apk": "eas build -p android --profile preview"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.7.1",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@types/react": "~19.2.2",
     "babel-preset-expo": "^57.0.5",
+    "eas-cli": "^22.0.0",
     "prettier-plugin-tailwindcss": "0.5.11",
     "tailwindcss": "3.4.17",
     "typescript": "~6.0.3"

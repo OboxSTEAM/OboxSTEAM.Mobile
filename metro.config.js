@@ -11,12 +11,15 @@ const config = withNativeWind(getDefaultConfig(__dirname), {
  * native init path so Expo Go can load. See: github.com/expo/expo/issues/48390
  *
  * Apply AFTER withNativeWind so NativeWind does not overwrite this resolver.
- * Remove this stub for development builds / production APKs where worklets
- * should run normally.
+ * Skip the stub on EAS / explicit native builds so Reanimated worklets work in APKs.
  */
+const shouldStubWorklets =
+  process.env.EAS_BUILD !== "true" &&
+  process.env.EXPO_NO_WORKLETS_STUB !== "1";
+
 const baseResolveRequest = config.resolver.resolveRequest;
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (moduleName === "react-native-worklets") {
+  if (shouldStubWorklets && moduleName === "react-native-worklets") {
     return { type: "empty" };
   }
   return baseResolveRequest
