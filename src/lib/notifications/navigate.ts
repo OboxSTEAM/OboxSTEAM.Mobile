@@ -1,4 +1,4 @@
-import type { Router } from "expo-router";
+import { router as expoRouter } from "expo-router";
 
 import type { Notification } from "@/lib/api/entities/notification";
 import type { ParentLink } from "@/lib/api/entities/linked-account";
@@ -8,6 +8,8 @@ export type NotificationRoute =
   | { kind: "child"; studentId: string }
   | { kind: "enrollment"; studentId: string; enrollmentId: string }
   | { kind: "none" };
+
+type RouterLike = Pick<typeof expoRouter, "push">;
 
 /**
  * Resolve in-app navigation for a notification.
@@ -37,7 +39,7 @@ export function resolveNotificationRoute(
 }
 
 export function navigateNotificationRoute(
-  router: Router,
+  router: RouterLike,
   route: NotificationRoute,
 ): boolean {
   if (route.kind === "child") {

@@ -147,6 +147,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   const flushInFlight = useRef<Promise<void> | null>(null);
   const appStateRef = useRef<AppStateStatus>(AppState.currentState);
   const stopHubRef = useRef<(() => void) | null>(null);
+  const refreshRef = useRef<
+    ((options?: { force?: boolean }) => Promise<void>) | null
+  >(null);
+  const flushOutboxRef = useRef<(() => Promise<void>) | null>(null);
+  const prependFromHubRef = useRef<((notification: Notification) => void) | null>(
+    null,
+  );
 
   useEffect(() => {
     itemsRef.current = items;
@@ -341,9 +348,12 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       if (!current || current.readAt) return;
 
       const stamp = nowReadAt();
-      const nextItems = itemsRef.current.map((item) =>
+      let nextItems = itemsRef.current.map((item) =>
         item.id === id ? { ...item, readAt: stamp } : item,
       );
+      if (unreadOnlyRef.current) {
+        nextItems = nextItems.filter((item) => !item.readAt);
+      }
       const nextUnread = Math.max(0, unreadCountRef.current - 1);
       setItems(nextItems);
       setUnreadCount(nextUnread);
@@ -406,6 +416,16 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     [persistCache],
   );
 
+  useEffect(() => {
+    refreshRef.current = refresh;
+  }, [refresh]);
+  useEffect(() => {
+    flushOutboxRef.current = flushOutbox;
+  }, [flushOutbox]);
+  useEffect(() => {
+    prependFromHubRef.current = prependFromHub;
+  }, [prependFromHub]);
+
   // Hydrate + connect when authenticated parent is ready.
   useEffect(() => {
     if (status !== "authenticated" || !userId) {
@@ -446,12 +466,14 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         setIsStale(true);
       }
 
-      await refresh({ force: true });
+      await refreshRef.current?.({ force: true });
       if (cancelled) return;
 
       stopHubRef.current?.();
       stopHubRef.current = startNotificationHub({
-        onNotification: prependFromHub,
+        onNotification: (notification) => {
+          prependFromHubRef.current?.(notification);
+        },
         onStateChange: setHubState,
       });
     };
@@ -463,7 +485,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       stopHubRef.current?.();
       stopHubRef.current = null;
     };
-  }, [status, userId, refresh, prependFromHub]);
+  }, [status, userId]);
 
   // Foreground: refresh + flush + ensure hub.
   useEffect(() => {
@@ -477,11 +499,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
         (previous === "background" || previous === "inactive") &&
         next === "active"
       ) {
-        void refresh({ force: true });
-        void flushOutbox();
+        void refreshRef.current?.({ force: true });
+        void flushOutboxRef.current?.();
         if (!stopHubRef.current) {
           stopHubRef.current = startNotificationHub({
-            onNotification: prependFromHub,
+            onNotification: (notification) => {
+              prependFromHubRef.current?.(notification);
+            },
             onStateChange: setHubState,
           });
         }
@@ -489,7 +513,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.remove();
-  }, [status, userId, refresh, flushOutbox, prependFromHub]);
+  }, [status, userId]);
 
   // Logout / session invalidate: wipe local notification storage.
   useEffect(() => {
