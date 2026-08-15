@@ -3,6 +3,7 @@ import { ChildProgressCard } from "@/components/child-progress-card";
 import { PressableScale } from "@/components/pressable-scale";
 import { ScreenState } from "@/components/screen-state";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useNotifications } from "@/lib/notifications/notifications-context";
 import { useChildren } from "@/lib/parent/children-context";
 import {
   childDisplayName,
@@ -24,6 +25,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function ChildrenListScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { unreadCount } = useNotifications();
   const {
     links,
     linksState,
@@ -107,6 +109,7 @@ export default function ChildrenListScreen() {
             childCount={snapshot.childCount}
             activeCount={snapshot.activeCount}
             newUpdates={snapshot.newUpdates}
+            unreadCount={unreadCount}
             linksError={linksError}
             onOpenNotifications={() => router.push("/notifications")}
           />
@@ -161,6 +164,7 @@ function HomeHeader({
   childCount,
   activeCount,
   newUpdates,
+  unreadCount,
   linksError,
   onOpenNotifications,
 }: {
@@ -168,6 +172,7 @@ function HomeHeader({
   childCount: number;
   activeCount: number;
   newUpdates: number;
+  unreadCount: number;
   linksError: string | null;
   onOpenNotifications: () => void;
 }) {
@@ -206,7 +211,7 @@ function HomeHeader({
         >
           <View className="h-11 w-11 items-center justify-center rounded-full bg-card">
             <Bell color={colors.foreground} size={20} />
-            {newUpdates > 0 ? (
+            {unreadCount > 0 ? (
               <View className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-primary" />
             ) : null}
           </View>

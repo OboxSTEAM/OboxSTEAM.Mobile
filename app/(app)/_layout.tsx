@@ -1,5 +1,6 @@
 import { AnimatedDock } from "@/components/animated-dock";
 import { useAuth } from "@/lib/auth/auth-context";
+import { NotificationsProvider } from "@/lib/notifications/notifications-context";
 import { ChildrenProvider } from "@/lib/parent/children-context";
 import { colors } from "@/lib/tokens/colors";
 import { Redirect } from "expo-router";
@@ -20,35 +21,37 @@ export default function AppLayout() {
 
   return (
     <ChildrenProvider>
-      <Tabs
-        tabBar={(props) => <AnimatedDock {...props} />}
-        screenOptions={{
-          headerShown: false,
-          sceneStyle: { backgroundColor: colors.background },
-        }}
-      >
-        <Tabs.Screen
-          name="children"
-          options={{
-            title: "Con của bạn",
-            tabBarLabel: "Con của bạn",
+      <NotificationsProvider>
+        <Tabs
+          tabBar={(props) => <AnimatedDock {...props} />}
+          screenOptions={{
+            headerShown: false,
+            sceneStyle: { backgroundColor: colors.background },
           }}
-        />
-        <Tabs.Screen
-          name="notifications"
-          options={{
-            title: "Thông báo",
-            tabBarLabel: "Thông báo",
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: "Tài khoản",
-            tabBarLabel: "Tài khoản",
-          }}
-        />
-      </Tabs>
+        >
+          <Tabs.Screen
+            name="children"
+            options={{
+              title: "Con của bạn",
+              tabBarLabel: "Con của bạn",
+            }}
+          />
+          <Tabs.Screen
+            name="notifications"
+            options={{
+              title: "Thông báo",
+              tabBarLabel: "Thông báo",
+            }}
+          />
+          <Tabs.Screen
+            name="profile"
+            options={{
+              title: "Tài khoản",
+              tabBarLabel: "Tài khoản",
+            }}
+          />
+        </Tabs>
+      </NotificationsProvider>
     </ChildrenProvider>
   );
 }

@@ -105,4 +105,63 @@ export function createApiGetWith<TParams, TValue extends z.ZodType>({
   };
 }
 
+export function createApiPatch<TValue extends z.ZodType>({
+  path,
+  value,
+  skipAuth,
+}: {
+  path: string | (() => string);
+  value: TValue;
+  skipAuth?: boolean;
+}) {
+  const responseSchema = createApiResponseSchema(value);
+
+  return async (options?: EndpointAuthOptions): Promise<z.infer<TValue>> => {
+    const resolvedPath = typeof path === "function" ? path() : path;
+    const response = await apiFetch(resolvedPath, {
+      method: "PATCH",
+      skipAuth: options?.skipAuth ?? skipAuth,
+      signal: options?.signal,
+    });
+    const json = await parseJsonOrThrow(response);
+    const envelope = responseSchema.parse(json);
+    assertApiSuccess(envelope);
+    if (!envelope.value) {
+      throw new Error("Phản hồi API thiếu value.");
+    }
+    return envelope.value;
+  };
+}
+
+/** PATCH with path params — annotate the `path` callback to infer `TParams`. */
+export function createApiPatchWith<TParams, TValue extends z.ZodType>({
+  path,
+  value,
+  skipAuth,
+}: {
+  path: (params: TParams) => string;
+  value: TValue;
+  skipAuth?: boolean;
+}) {
+  const responseSchema = createApiResponseSchema(value);
+
+  return async (
+    params: TParams,
+    options?: EndpointAuthOptions,
+  ): Promise<z.infer<TValue>> => {
+    const response = await apiFetch(path(params), {
+      method: "PATCH",
+      skipAuth: options?.skipAuth ?? skipAuth,
+      signal: options?.signal,
+    });
+    const json = await parseJsonOrThrow(response);
+    const envelope = responseSchema.parse(json);
+    assertApiSuccess(envelope);
+    if (!envelope.value) {
+      throw new Error("Phản hồi API thiếu value.");
+    }
+    return envelope.value;
+  };
+}
+
 export type MessageOnlyValue = z.infer<typeof apiValueMessageOnlySchema>;

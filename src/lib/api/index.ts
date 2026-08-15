@@ -30,3 +30,14 @@ export type {
   ParentProgressEvent,
   ParentProgressionSummary,
 } from "@/lib/api/parent";
+
+export {
+  getNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/api/notifications";
+export type {
+  Notification,
+  NotificationUnreadCount,
+} from "@/lib/api/notifications";

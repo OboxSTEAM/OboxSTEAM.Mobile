@@ -1,4 +1,5 @@
 import { colors } from "@/lib/tokens/colors";
+import { useOptionalNotifications } from "@/lib/notifications/notifications-context";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
 import { Bell, UserRound, Users, type LucideIcon } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
@@ -30,6 +31,8 @@ export function AnimatedDock({
   navigation,
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
+  const notifications = useOptionalNotifications();
+  const unreadCount = notifications?.unreadCount ?? 0;
   const [trackWidth, setTrackWidth] = useState(0);
   const indicatorX = useRef(new Animated.Value(0)).current;
   const itemScales = useRef<Animated.Value[]>([]);
@@ -118,13 +121,19 @@ export function AnimatedDock({
                   : meta.label;
             const color = isFocused ? colors.primary : colors.mutedForeground;
             const scale = itemScales.current[index] ?? new Animated.Value(1);
+            const showBadge =
+              route.name === "notifications" && unreadCount > 0;
 
             return (
               <Pressable
                 key={route.key}
                 accessibilityRole="button"
                 accessibilityState={isFocused ? { selected: true } : {}}
-                accessibilityLabel={label}
+                accessibilityLabel={
+                  showBadge
+                    ? `${label}, ${unreadCount} chưa đọc`
+                    : label
+                }
                 onPress={() => {
                   const event = navigation.emit({
                     type: "tabPress",
@@ -143,7 +152,16 @@ export function AnimatedDock({
                   className="items-center justify-center"
                   style={{ transform: [{ scale }] }}
                 >
-                  <meta.Icon color={color} size={22} />
+                  <View>
+                    <meta.Icon color={color} size={22} />
+                    {showBadge ? (
+                      <View className="absolute -right-1.5 -top-1 min-w-[16px] items-center rounded-full bg-primary px-1">
+                        <Text className="text-[10px] font-bold leading-[14px] text-primary-foreground">
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                   <Text
                     className="mt-1 text-[11px] font-medium"
                     style={{ color }}
