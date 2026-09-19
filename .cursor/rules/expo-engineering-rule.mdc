@@ -5,7 +5,7 @@ alwaysApply: true
 
 # OboxSTEAM Mobile — Expo Engineering
 
-Mobile app standards. **Visual design:** `styling-rule.mdc`. **Domain/routes:** `context.mdc`. **Endpoints:** `src/lib/api/**` + OpenAPI (`api-spec.mdc`). **Agent entry / FE re-copy:** `AGENTS.md`.
+Mobile app standards. **Visual design:** `styling-rule.mdc`. **Domain/routes:** `context.mdc`. **Endpoints:** `src/lib/api/**` + OpenAPI (`api-spec.mdc`). **Agent entry:** `AGENTS.md`.
 
 ---
 
@@ -34,7 +34,7 @@ Functional TypeScript (no classes); auxiliary verbs (`isLoading`, `canSubmit`); 
 
 **Layout:** exported screen/component → helpers → types; folders `kebab-case`; comments only for non-obvious logic.
 
-**Imports:** `@/` → `src/`. Strip any leftover Next-only imports when copying from FE.
+**Imports:** `@/` → `src/`.
 
 ---
 
@@ -54,7 +54,7 @@ FE uses `sessionStorage`. Mobile **must**:
 
 1. Persist `accessToken` + `refreshToken` (+ optional user cache) in **SecureStore** (`src/lib/auth/session.ts`).
 2. Keep the same refresh POST body/contract as FE (`/api/auth/refresh-token`).
-3. Attach `Authorization: Bearer` via API interceptors (adapted from FE).
+3. Attach `Authorization: Bearer` via API interceptors.
 4. After `getCurrentUser`, route supported roles (Parent / Student / Mentor as shipped); others → block UI + logout / “dùng website”.
 
 ---
@@ -69,7 +69,7 @@ FE uses `sessionStorage`. Mobile **must**:
 
 ## API layer (`src/lib/api/`)
 
-Copied and trimmed from FE. Backend envelope: `{ isSuccess, value, error }` with `value` often `{ code, message, data? }`.
+Backend envelope: `{ isSuccess, value, error }` with `value` often `{ code, message, data? }`. Extend `src/lib/api/` in this repo — do not treat FE re-copy as the workflow.
 
 ### Layout
 
@@ -80,7 +80,7 @@ src/lib/api/
   auth/, account/, parent/, notifications/
   entities/              # shared DTOs
   index.ts               # SLIM role-needed barrel — do not paste FE mega-barrel
-src/lib/validations/     # request Zod (auth, parent, notifications, account; payments when checkout)
+src/lib/validations/     # request Zod (auth, parent, notifications, account)
 src/lib/errors/          # resolveAppError; toast via RN snackbar — not Sonner
 ```
 
@@ -94,7 +94,7 @@ src/lib/errors/          # resolveAppError; toast via RN snackbar — not Sonner
 
 - Prefer `z.infer<typeof schema>` over duplicate interfaces.
 - Config: `EXPO_PUBLIC_API_URL` via `src/lib/env.ts` — not Next `env`.
-- When FE contracts change: follow **`AGENTS.md`** (manual re-copy), then fix mobile import/storage adaptations.
+- New endpoints: OpenAPI (`pnpm sync:api-spec` / obox-api) → Zod + `createApi*` in `src/lib/api/` (see `api-spec.mdc`).
 
 ### Errors
 
@@ -104,11 +104,11 @@ src/lib/errors/          # resolveAppError; toast via RN snackbar — not Sonner
 
 ---
 
-## Copy-sync policy
+## API extension
 
-- **Do copy** role-needed `lib/api/*`, validations, session/roles logic, errors resolve, entities.
-- **Do not copy** `components/ui/*`, Next `app/` pages, GSAP/TipTap, manager tables, full FE barrels.
-- After copy: rewrite `@/` paths, SecureStore session, drop Next env, slim `index.ts`.
+- Add/update helpers under `src/lib/api/` and validations under `src/lib/validations/`.
+- Contract source: OpenAPI (`specs/` + `api-spec.mdc`), not a FE re-copy checklist.
+- Do **not** import FE `components/ui`, Next pages, or mega API barrels.
 
 ---
 
@@ -120,4 +120,4 @@ Validate input with Zod. No tokens in AsyncStorage or logs. Least privilege (sup
 
 ## Delivery
 
-Focused, typed, lint-clean diffs. Verify on Expo Go or preview APK. Match OboxSTEAM FE contracts without inventing endpoints. Keep design tokens — no new hex or web dashboards.
+Focused, typed, lint-clean diffs. Verify on Expo Go or preview APK. Match backend OpenAPI contracts without inventing endpoints. Keep design tokens — no new hex or web dashboards.

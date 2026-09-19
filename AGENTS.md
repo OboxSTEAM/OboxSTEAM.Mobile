@@ -3,9 +3,10 @@
 ## OboxSTEAM.Mobile
 
 Expo (React Native) app for OboxSTEAM — same backend as `OboxSTEAM.FE` /
-`OboxSTEAM.API` (`EXPO_PUBLIC_API_URL`). Parent-first today; v2 adds thin
-Student and Mentor surfaces that share the existing design tokens (not a second
-product). Android-first (Expo Go / EAS APK).
+`OboxSTEAM.API` (`EXPO_PUBLIC_API_URL`). **Mobile v2** (locked): Parent UI
+overhaul + weekly schedule; thin Student (schedule / QR check-in) and Mentor
+(QR rotate / class-moment capture). Same design tokens — not a second product.
+Android-first (Expo Go / EAS APK).
 
 **Read first for product work:**
 
@@ -44,63 +45,43 @@ over new hex or web-style multi-column dashboards.
 
 ---
 
-## FE → Mobile API sync
+## Mobile v2 scope (locked)
 
-Mobile **copies** needed modules from `OboxSTEAM.FE` (no git/npm link). When
-backend contracts change, re-copy from FE, then re-apply mobile adaptations.
+### In scope
 
-### Folders to re-copy from FE
+1. **Parent UI overhaul** — home + child detail (+ enrollment if needed): flatten
+   stacked cards; lead with what’s next / blockers / new.
+2. **Weekly schedule** — Parent (child via `studentId`) + Student —
+   `GET /api/schedules/weekly`.
+3. **Mentor QR rotate** — generate/rotate check-in token (~60s TTL) for offline
+   sessions.
+4. **Student QR check-in** — scan-first (needs BE `checkin-by-token`);
+   `{ token }` or `{ code }` fallback.
+5. **Mentor capture** — class moments via `POST /api/media/upload` (face
+   pipeline); **not** session `evidence`.
+6. **Role gate** — thin homes for Parent / Student / Mentor after
+   `/api/account/me`; other roles → use website (`blocked`).
+7. **Small add-on** — today’s check-in status on Parent child detail (after QR
+   lands).
 
-| FE path | Mobile destination | Notes |
-|---------|-------------------|--------|
-| `lib/api/client.ts`, `create-endpoint.ts`, `errors.ts`, `schemas.ts` | `src/lib/api/` | Keep envelope helpers |
-| `lib/api/config.ts` | `src/lib/api/config.ts` | Use `EXPO_PUBLIC_API_URL` / `src/lib/env.ts` |
-| `lib/api/interceptors/` | `src/lib/api/interceptors/` | Token R/W → SecureStore session |
-| `lib/api/auth/` | `src/lib/api/auth/` | login, refresh-token |
-| `lib/api/account/` | `src/lib/api/account/` | at least `getCurrentUser` |
-| `lib/api/parent/` | `src/lib/api/parent/` | links + progression |
-| `lib/api/notifications/` | `src/lib/api/notifications/` | inbox, unread, mark read |
-| `lib/api/entities/` | `src/lib/api/entities/` | user, linked-account, notification, pagination (+ deps) |
-| `lib/validations/auth.ts`, `parent.ts`, `notifications.ts`, `account.ts` | `src/lib/validations/` | request Zod |
-| `lib/auth/session.ts` | `src/lib/auth/session.ts` | **rewrite** storage → SecureStore; keep token shape |
-| `lib/auth/roles.ts` | `src/lib/auth/roles.ts` | Parent + Student/Mentor helpers as roles ship |
-| `lib/errors/types.ts`, `resolve-app-error.ts` | `src/lib/errors/` | replace Sonner with RN toast |
-| `lib/realtime/notification-hub.ts` | `src/lib/realtime/` | SecureStore token |
+### Out of scope
 
-**When checkout / payments ship:** re-add `lib/api/payments/` +
-`lib/validations/payments.ts` (not present in mobile today).
+- Parent payment CTA on mobile
+- Parent photo gallery
+- Session `evidence` on phone (stays on web)
+- Full LMS (learn / quiz / research / portfolio edit)
+- Manager / Expert chrome; inventing mobile-only endpoints; FE `components/ui`
 
-**Upcoming (fill when implementing):** schedule/weekly APIs; mentor
-`checkin-token`; student `checkin-by-token`; `media/upload`. Prefer FE wrappers
-when they exist; otherwise Zod from OpenAPI (`pnpm sync:api-spec` + obox-api).
+### Implementation order
 
-### After every re-copy
-
-1. Rewrite imports to `@/` → `src/`.
-2. Remove Next-only imports (`next/*`, RSC, Sonner, DOM).
-3. Point auth interceptor at SecureStore session helpers.
-4. Rebuild a **slim** `src/lib/api/index.ts` (role-needed exports only — no FE mega-barrel).
-5. Run TypeScript check; smoke login + `me` on device.
-
-### Do not re-copy
-
-- `components/ui/*`, web `app/` pages, GSAP/Motion/TipTap, manager tables,
-  Redux store, full `lib/api/index.ts`, Expert/LMS chrome.
-
----
-
-## Roadmap (implementation order)
-
-1. **ParentProgress IA** — flatten children list / child detail / enrollment
-   timeline; one progress signal; keep tokens & `ScreenState` (no new BE).
-2. **Schedule** — week strip + day list; Parent child switcher (existing weekly API).
-3. **Mentor QR** — full-screen QR + 6-digit + countdown (`checkin-token`).
-4. **Student check-in** — camera / paste code (`checkin-by-token` when BE ready).
-5. **Mentor capture** — camera → preview → `media/upload` (+ `expo-camera`).
+1. Parent UI overhaul  
+2. Schedule (`/api/schedules/weekly`)  
+3. Mentor QR + Student QR (Student waits on BE `checkin-by-token`)  
+4. Mentor capture (`media/upload`)  
+5. Parent child-detail check-in status (after QR)
 
 **Nav (v2):** role-based root after login. Parent tabs: Con / Lịch / Thông báo /
 Tài khoản. Student: Lịch + Check-in. Mentor: today’s session → QR / Capture.
-Manager/Expert stay on website (`blocked` pattern).
 
 ---
 

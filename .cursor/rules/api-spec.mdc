@@ -5,7 +5,7 @@ alwaysApply: false
 
 # OboxSTEAM Mobile — Backend API Spec
 
-Load when adding or updating `src/lib/api/*`, `src/lib/validations/*`, or any feature that calls the backend. Endpoint truth: `src/lib/api/**` (helpers) + this OpenAPI map. FE re-copy / agent entry: **`AGENTS.md`**.
+Load when adding or updating `src/lib/api/*`, `src/lib/validations/*`, or any feature that calls the backend. Endpoint truth: `src/lib/api/**` (helpers) + this OpenAPI map. Agent entry: **`AGENTS.md`**.
 
 ---
 
@@ -32,7 +32,7 @@ Backend routes use `/api/...`. Mobile `apiFetch` prepends `EXPO_PUBLIC_API_URL` 
 
 ### Response envelope
 
-Swagger `*ApiResult` schemas map to the shared envelope in `src/lib/api/schemas.ts` (copied from FE):
+Swagger `*ApiResult` schemas map to the shared envelope in `src/lib/api/schemas.ts`:
 
 ```json
 { "isSuccess": true, "value": { "code": "...", "message": "...", "data": { ... } }, "error": null }
@@ -50,9 +50,8 @@ Do **not** treat Swagger response bodies as raw DTOs — always wrap with the en
 ### Implementation checklist
 
 1. Query **obox-api** MCP or read `specs/oboxsteam.openapi.json` for path, method, request/response schemas.
-2. Prefer re-copying updated FE modules per `AGENTS.md` when the contract already exists on web.
-3. Request/form rules → `src/lib/validations/<domain>.ts` (Vietnamese messages).
-4. Response entity + `*ValueSchema` → `src/lib/api/<domain>/schemas.ts`.
-5. Endpoint function → `src/lib/api/<domain>/index.ts`; slim re-export from `src/lib/api/index.ts`.
+2. Request/form rules → `src/lib/validations/<domain>.ts` (Vietnamese messages).
+3. Response entity + `*ValueSchema` → `src/lib/api/<domain>/schemas.ts`.
+4. Endpoint function → `src/lib/api/<domain>/index.ts`; slim re-export from `src/lib/api/index.ts`.
 
 Auth: protected routes use Bearer via SecureStore session interceptors (default on `apiFetch`).

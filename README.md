@@ -44,7 +44,7 @@ Do **not** point a physical phone at `localhost` — use the VPS URL, or
 app/                 # Expo Router screens
 src/
   lib/
-    api/             # FE-trimmed API slice + interceptors
+    api/             # API client + domain helpers + interceptors
     auth/            # SecureStore session + roles
     tokens/          # Brand colors / radii
     validations/     # Zod request schemas
@@ -52,14 +52,19 @@ src/
   components/        # RN UI only — do not copy FE shadcn
 ```
 
-## Status
+## Status (v2)
 
 - [x] Expo + NativeWind + SecureStore session
 - [x] Parent auth gate, children list, progression, notifications, profile
-- [x] Cursor rules + OpenAPI sync (`pnpm sync:api-spec`) + agent entry (`AGENTS.md`)
-- [ ] ParentProgress IA overhaul
-- [ ] Schedule / Student / Mentor modules (see `AGENTS.md` roadmap)
+- [x] Agent entry (`AGENTS.md`) + OpenAPI sync
+- [ ] Parent UI overhaul (what’s next / blockers / new)
+- [ ] Weekly schedule — Parent + Student (`GET /api/schedules/weekly`)
+- [ ] Mentor QR rotate + Student QR check-in
+- [ ] Mentor capture (`POST /api/media/upload`)
+- [ ] Parent child-detail today’s check-in status
 - [ ] EAS preview APK (optional)
+
+See locked scope + order in [`AGENTS.md`](./AGENTS.md).
 
 ## Agent context
 

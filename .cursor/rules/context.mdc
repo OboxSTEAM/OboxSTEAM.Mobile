@@ -13,9 +13,9 @@ alwaysApply: false
 
 **OboxSTEAM.Mobile** — Expo (React Native) app sharing the same backend as `OboxSTEAM.FE` (`EXPO_PUBLIC_API_URL`). Web FE stays on VPS; this app is Android-first (Expo Go / EAS APK).
 
-**In scope:** Parent tabs (children / progress, notifications, profile; Schedule when shipped). Thin Student (schedule + check-in) and Mentor (QR + capture) surfaces that reuse the same tokens/components.
+**In scope (v2):** Parent UI overhaul (home / child detail / enrollment as needed); weekly schedule (`GET /api/schedules/weekly`) for Parent + Student; Mentor QR rotate + Student QR check-in; Mentor class-moment capture (`POST /api/media/upload`); role gate after `me`; today’s check-in status on Parent child detail (after QR). Same design tokens for all roles.
 
-**Out of scope:** Manager / Expert / LMS chrome, inventing new backend endpoints, shared npm packages with FE, copying FE `components/ui`.
+**Out of scope:** Parent payment CTA; parent photo gallery; session `evidence` on phone; full LMS; Manager / Expert chrome; inventing mobile-only endpoints; copying FE `components/ui`; shared npm with FE.
 
 ---
 
@@ -23,9 +23,9 @@ alwaysApply: false
 
 | Actor | Mobile treatment |
 |-------|------------------|
-| **Parent** | Primary role — children home, progression, notifications, profile |
-| **Student** | Thin — schedule + check-in (when APIs ready) |
-| **Mentor** | Thin — session QR + media capture (when APIs ready) |
+| **Parent** | Children home + progress overhaul, notifications, profile; Lịch + child switcher; check-in status add-on |
+| **Student** | Thin — schedule + QR check-in |
+| **Mentor** | Thin — QR rotate + class-moment capture (`media/upload`, not evidence) |
 | Other roles | “Dùng website” + logout — `blocked` pattern |
 
 **Parent–Child linking:** Parent sees linked children via `GET /api/parent/links`. Link/approve/magic-login/complete-profile flows mirror FE Parent dialogs as RN screens when exposed.
@@ -34,7 +34,7 @@ alwaysApply: false
 
 ## Product domain (short)
 
-OboxSTEAM is a Vietnamese STEAM learning platform. Parents register/link children and monitor progress/notifications. Portfolio and manager tools stay on the **web FE**. Mobile adds Parent progress UX plus lightweight Student/Mentor check-in/capture.
+OboxSTEAM is a Vietnamese STEAM learning platform. Mobile v2: Parent progress UX + weekly schedule; Student schedule/check-in; Mentor QR + class-moment capture. Payments, galleries, session evidence, and LMS stay on the **web FE**.
 
 ---
 
@@ -61,7 +61,7 @@ app/
 
 v2: role-based root after `me` — Parent → children home; Student → schedule/check-in; Mentor → session tools; others → `blocked`. Parent tabs add **Lịch** when Schedule ships.
 
-Deep links (as needed): magic-login, approve-link, parent checkout → `expo-linking` / `Linking.openURL(checkoutUrl)`.
+Deep links (as needed): magic-login, approve-link → `expo-linking`. No parent payment CTA on mobile (out of scope).
 
 ---
 
@@ -83,9 +83,9 @@ Deep links (as needed): magic-login, approve-link, parent checkout → `expo-lin
 
 ## Key conventions
 
-- Alias `@/` → `src/` (FE modules re-copied under `src/lib/...`).
+- Alias `@/` → `src/`.
+- Extend `src/lib/api/` + `src/lib/validations/` from OpenAPI (`api-spec.mdc`); see **`AGENTS.md`** for v2 scope.
 - Do **not** copy FE `components/ui` (shadcn/DOM) — rebuild with `View` / `Text` / `Pressable`.
-- API/validation/errors: **copy + adapt** from FE; see **`AGENTS.md`** when contracts change.
 - Gate on supported roles after `getCurrentUser`.
 - Vietnamese copy aligned with FE Parent strings where possible.
 - Student/parent PII: never log tokens or personal data.
