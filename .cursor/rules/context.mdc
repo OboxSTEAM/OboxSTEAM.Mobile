@@ -1,36 +1,40 @@
 ---
-description: OboxSTEAM Mobile — Parent MVP domain, routes, and scope
+description: OboxSTEAM Mobile — domain, roles, routes, and scope
 alwaysApply: false
 ---
 
 # OboxSTEAM Mobile — Project Context
 
-> Load when working on Parent features, auth, routing, or API wiring. Engineering: `expo-engineering-rule.mdc`. UI: `styling-rule.mdc`. Endpoints: `parent-api.mdc`.
+> Load when working on features, auth, routing, or API wiring. Engineering: `expo-engineering-rule.mdc`. UI: `styling-rule.mdc`. Endpoints: `src/lib/api/**` + `api-spec.mdc`. Agent entry: `AGENTS.md`.
 
 ---
 
 ## What this repo is
 
-**OboxSTEAM.Mobile** — separate Expo (React Native) app for the **Parent** MVP. Same backend as `OboxSTEAM.FE` (`EXPO_PUBLIC_API_URL`). Web FE stays on VPS; this app is Android-first (Expo Go / EAS APK).
+**OboxSTEAM.Mobile** — Expo (React Native) app sharing the same backend as `OboxSTEAM.FE` (`EXPO_PUBLIC_API_URL`). Web FE stays on VPS; this app is Android-first (Expo Go / EAS APK).
 
-**Out of scope (v1):** Manager screens, portfolio microsites, mentor flows, inventing new backend endpoints, shared npm packages with FE.
+**In scope:** Parent tabs (children / progress, notifications, profile; Schedule when shipped). Thin Student (schedule + check-in) and Mentor (QR + capture) surfaces that reuse the same tokens/components.
+
+**Out of scope:** Manager / Expert / LMS chrome, inventing new backend endpoints, shared npm packages with FE, copying FE `components/ui`.
 
 ---
 
-## Actors (mobile focus)
+## Actors (mobile)
 
 | Actor | Mobile treatment |
 |-------|------------------|
-| **Parent** | Only supported role after `GET /api/account/me` |
-| Other roles | Show “use website” + logout — do not build Student/Manager UI |
+| **Parent** | Primary role — children home, progression, notifications, profile |
+| **Student** | Thin — schedule + check-in (when APIs ready) |
+| **Mentor** | Thin — session QR + media capture (when APIs ready) |
+| Other roles | “Dùng website” + logout — `blocked` pattern |
 
-**Parent–Child linking:** Parent sees linked children via `GET /api/parent/links`. Link/approve/magic-login/complete-profile flows mirror FE Parent dialogs as RN screens.
+**Parent–Child linking:** Parent sees linked children via `GET /api/parent/links`. Link/approve/magic-login/complete-profile flows mirror FE Parent dialogs as RN screens when exposed.
 
 ---
 
 ## Product domain (short)
 
-OboxSTEAM is a Vietnamese STEAM learning platform. Parents register/link children, pay when requested, and monitor progress/notifications. Portfolio, LMS detail, and mentor tools live on the **web FE** — mobile only surfaces Parent-needed APIs.
+OboxSTEAM is a Vietnamese STEAM learning platform. Parents register/link children and monitor progress/notifications. Portfolio and manager tools stay on the **web FE**. Mobile adds Parent progress UX plus lightweight Student/Mentor check-in/capture.
 
 ---
 
@@ -39,17 +43,25 @@ OboxSTEAM is a Vietnamese STEAM learning platform. Parents register/link childre
 ```text
 app/
 ├── (auth)/
-│   └── login.tsx                 → email/password
-├── (app)/                        → tabs after auth (Parent only)
+│   └── login.tsx
+├── (guest)/
+│   └── welcome.tsx
+├── (app)/                        → tabs after auth (Parent today)
 │   ├── _layout.tsx
-│   ├── index.tsx                 → children list (getParentLinks)
+│   ├── children/
+│   │   ├── index.tsx             → children list
+│   │   └── [studentId]/
+│   │       ├── index.tsx         → child progression
+│   │       └── enrollments/[enrollmentId].tsx
 │   ├── notifications.tsx
-│   ├── profile.tsx               → profile + logout
-│   └── children/[id].tsx         → phase 1b when APIs exist
+│   └── profile.tsx
+├── blocked.tsx                   → non-supported role
 └── _layout.tsx
 ```
 
-Deep links (phase 1b): magic-login, approve-link, parent checkout → `expo-linking` / `Linking.openURL(checkoutUrl)`.
+v2: role-based root after `me` — Parent → children home; Student → schedule/check-in; Mentor → session tools; others → `blocked`. Parent tabs add **Lịch** when Schedule ships.
+
+Deep links (as needed): magic-login, approve-link, parent checkout → `expo-linking` / `Linking.openURL(checkoutUrl)`.
 
 ---
 
@@ -65,7 +77,7 @@ Deep links (phase 1b): magic-login, approve-link, parent checkout → `expo-link
 | State           | React context first; no Redux unless needed later                       |
 | Icons           | `lucide-react-native`                                                   |
 | Package manager | **pnpm only**                                                           |
-| Realtime (1b)   | `@microsoft/signalr` + `/hubs/notifications`                            |
+| Realtime        | `@microsoft/signalr` + `/hubs/notifications`                            |
 
 ---
 
@@ -73,12 +85,14 @@ Deep links (phase 1b): magic-login, approve-link, parent checkout → `expo-link
 
 - Alias `@/` → `src/` (FE modules re-copied under `src/lib/...`).
 - Do **not** copy FE `components/ui` (shadcn/DOM) — rebuild with `View` / `Text` / `Pressable`.
-- API/validation/errors: **copy + adapt** from FE; see `SYNC.md` when contracts change.
-- Gate on Parent role after `getCurrentUser`.
+- API/validation/errors: **copy + adapt** from FE; see **`AGENTS.md`** when contracts change.
+- Gate on supported roles after `getCurrentUser`.
 - Vietnamese copy aligned with FE Parent strings where possible.
 - Student/parent PII: never log tokens or personal data.
+- Keep design tokens; no new hex / web multi-column dashboards.
 
 ---
 
-**Project**: OboxSTEAM.Mobile (Parent)
-**Companion**: OboxSTEAM.FE (web)
+**Project**: OboxSTEAM.Mobile
+**Companion**: OboxSTEAM.FE (web), OboxSTEAM.API (backend)
+**Agent entry**: [`AGENTS.md`](../../AGENTS.md)

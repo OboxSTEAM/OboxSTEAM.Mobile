@@ -5,7 +5,7 @@ alwaysApply: false
 
 # OboxSTEAM Mobile — Backend API Spec
 
-Load when adding or updating `src/lib/api/*`, `src/lib/validations/*`, or any feature that calls the backend. Parent endpoint checklist: `parent-api.mdc`. FE re-copy: `SYNC.md`.
+Load when adding or updating `src/lib/api/*`, `src/lib/validations/*`, or any feature that calls the backend. Endpoint truth: `src/lib/api/**` (helpers) + this OpenAPI map. FE re-copy / agent entry: **`AGENTS.md`**.
 
 ---
 
@@ -22,7 +22,7 @@ Load when adding or updating `src/lib/api/*`, `src/lib/validations/*`, or any fe
 
 **Agent tooling:** Use **obox-api** MCP (`get-api-catalog`, operation lookup) before implementing new endpoints. Prefer the committed spec; sync if stale.
 
-MCP is configured in `.cursor/mcp.json` → `@reapi/mcp-openapi` with `--dir ./specs`.
+MCP: copy `.cursor/mcp.example.json` → `.cursor/mcp.json` (gitignored). `obox-api` uses `@reapi/mcp-openapi` with `--dir ./specs`.
 
 ---
 
@@ -50,7 +50,7 @@ Do **not** treat Swagger response bodies as raw DTOs — always wrap with the en
 ### Implementation checklist
 
 1. Query **obox-api** MCP or read `specs/oboxsteam.openapi.json` for path, method, request/response schemas.
-2. Prefer re-copying updated FE modules per `SYNC.md` when the contract already exists on web.
+2. Prefer re-copying updated FE modules per `AGENTS.md` when the contract already exists on web.
 3. Request/form rules → `src/lib/validations/<domain>.ts` (Vietnamese messages).
 4. Response entity + `*ValueSchema` → `src/lib/api/<domain>/schemas.ts`.
 5. Endpoint function → `src/lib/api/<domain>/index.ts`; slim re-export from `src/lib/api/index.ts`.

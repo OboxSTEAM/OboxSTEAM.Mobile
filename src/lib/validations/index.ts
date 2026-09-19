@@ -27,15 +27,6 @@ export {
   type ParentMagicLoginInput,
 } from "./parent";
 export {
-  checkoutPaymentSchema,
-  parentCheckoutLinkParamsSchema,
-  parentCheckoutSchema,
-  paymentIdParamSchema,
-  requestParentPaymentSchema,
-  type ParentCheckoutInput,
-  type PaymentIdParam,
-} from "./payments";
-export {
   notificationIdParamSchema,
   notificationListQuerySchema,
   type NotificationIdParam,

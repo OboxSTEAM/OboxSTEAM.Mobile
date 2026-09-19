@@ -1,6 +1,8 @@
-# OboxSTEAM Mobile (Parent)
+# OboxSTEAM Mobile
 
-Separate Expo (React Native) app for the Parent MVP. Shares the same backend as `OboxSTEAM.FE` via HTTPS + Bearer tokens.
+Expo (React Native) client for OboxSTEAM — same HTTPS API as `OboxSTEAM.FE` /
+`OboxSTEAM.API`. Parent-first; Student and Mentor thin surfaces planned (see
+[`AGENTS.md`](./AGENTS.md)).
 
 ## Stack
 
@@ -23,7 +25,9 @@ pnpm start:clean       # Expo without Console Ninja hooks (preferred on Android)
 # or: pnpm start
 ```
 
-> If Expo Go kicks back to home: use **`pnpm start:clean`**, and in Cursor run **Console Ninja: Pause**. Do not use Play Store Expo Go for SDK 57 — install from [expo.dev/go](https://expo.dev/go?sdkVersion=57&platform=android&device=true).
+> If Expo Go kicks back to home: use **`pnpm start:clean`**, and in Cursor run
+> **Console Ninja: Pause**. Do not use Play Store Expo Go for SDK 57 — install
+> from [expo.dev/go](https://expo.dev/go?sdkVersion=57&platform=android&device=true).
 
 ### Env
 
@@ -31,47 +35,42 @@ pnpm start:clean       # Expo without Console Ninja hooks (preferred on Android)
 |----------|----------|--------|
 | `EXPO_PUBLIC_API_URL` | Yes | Same API as FE (e.g. `https://api.oboxsteam.website`) |
 
-Do **not** point a physical phone at `localhost` — use the VPS URL, or `adb reverse` / Android emulator `10.0.2.2` for local API.
+Do **not** point a physical phone at `localhost` — use the VPS URL, or
+`adb reverse` / Android emulator `10.0.2.2` for local API.
 
 ## Layout
 
 ```text
-app/                 # Expo Router screens (Phase 0: setup smoke screen)
+app/                 # Expo Router screens
 src/
   lib/
-    api/             # Parent-trimmed FE API slice (next step)
+    api/             # FE-trimmed API slice + interceptors
     auth/            # SecureStore session + roles
     tokens/          # Brand colors / radii
-    validations/     # Zod request schemas (next step)
-    errors/          # App error resolve (next step)
+    validations/     # Zod request schemas
+    errors/          # App error resolve → RN toast
   components/        # RN UI only — do not copy FE shadcn
 ```
 
-## Phase status
+## Status
 
-- [x] Phase 0 — Expo + NativeWind + env + SecureStore session stub
-- [x] Cursor rules + `SYNC.md` + OpenAPI sync MCP
-- [x] Expo Go crash fixed (`node-linker=hoisted`; blank → Router → full stack)
-- [ ] Copy Parent API / validations / errors from FE
-- [ ] Phase 1 screens (login, complete-profile, children, notifications, profile)
-- [ ] EAS preview APK
+- [x] Expo + NativeWind + SecureStore session
+- [x] Parent auth gate, children list, progression, notifications, profile
+- [x] Cursor rules + OpenAPI sync (`pnpm sync:api-spec`) + agent entry (`AGENTS.md`)
+- [ ] ParentProgress IA overhaul
+- [ ] Schedule / Student / Mentor modules (see `AGENTS.md` roadmap)
+- [ ] EAS preview APK (optional)
 
-## Run
+## Agent context
 
-```bash
-pnpm start:clean   # preferred (no Console Ninja hooks)
-# Keep only one Metro; scan this project's QR (check port in terminal)
-```
-
-`.npmrc` uses `node-linker=hoisted` (required for stable Expo Go with pnpm).
-
-## Agent rules & FE sync
-
-- Cursor rules: `.cursor/rules/` (conduct, context, Expo engineering, NativeWind styling, Parent API map, API spec)
-- OpenAPI: `pnpm sync:api-spec` → `specs/oboxsteam.openapi.json` (same Swagger as FE); MCP **obox-api** reads `./specs`
-- When FE API contracts change: follow **[`SYNC.md`](./SYNC.md)**
+New sessions: start at **[`AGENTS.md`](./AGENTS.md)**. Cursor rules live under
+`.cursor/rules/`. OpenAPI: `pnpm sync:api-spec` → `specs/oboxsteam.openapi.json`
+(MCP **obox-api**). Local MCP: copy `.cursor/mcp.example.json` → `.cursor/mcp.json`
+and set your Codegraph absolute path (file is gitignored).
 
 ## Device workflow
 
-1. **Preferred:** Android phone + Expo Go matching **SDK 57** ([expo.dev/go](https://expo.dev/go?sdkVersion=57&platform=android&device=true) — Play Store may lag) → `pnpm start` → scan QR
-2. **Fallback:** one Android Studio AVD (Pixel 6 / API 34, 2 GB RAM)
+1. **Preferred:** Android phone + Expo Go matching **SDK 57** → `pnpm start:clean` → scan QR
+2. **Fallback:** Android Studio AVD (Pixel 6 / API 34)
+
+`.npmrc` uses `node-linker=hoisted` (required for stable Expo Go with pnpm).

@@ -34,6 +34,9 @@ yarn-error.*
 .env
 .env*.local
 
+# local Cursor MCP (machine-specific paths) — copy from mcp.example.json
+.cursor/mcp.json
+
 # typescript
 *.tsbuildinfo
 
