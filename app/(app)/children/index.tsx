@@ -9,6 +9,7 @@ import {
   childDisplayName,
   givenName,
   progressPreview,
+  progressStatusLine,
 } from "@/lib/parent/labels";
 import { colors } from "@/lib/tokens/colors";
 import { useRouter } from "expo-router";
@@ -40,24 +41,15 @@ export default function ChildrenListScreen() {
   const isHardError = linksState === "error" && links.length === 0;
 
   const snapshot = useMemo(() => {
-    const activeCount = links.reduce((sum, link) => {
-      if (!link.isVerified) return sum;
-      return (
-        sum +
-        (progressSummaryFor(link.linkedUserId)?.summary?.activeEnrollmentCount ??
-          0)
-      );
-    }, 0);
     const newUpdates = links.reduce((sum, link) => {
       if (!link.isVerified) return sum;
       return sum + newMilestoneCount(link.linkedUserId);
     }, 0);
     return {
       childCount: links.length,
-      activeCount,
       newUpdates,
     };
-  }, [links, newMilestoneCount, progressSummaryFor]);
+  }, [links, newMilestoneCount]);
 
   if (isInitialLoading) {
     return (
@@ -107,7 +99,6 @@ export default function ChildrenListScreen() {
           <HomeHeader
             displayName={givenName(user?.fullName, "Phụ huynh")}
             childCount={snapshot.childCount}
-            activeCount={snapshot.activeCount}
             newUpdates={snapshot.newUpdates}
             unreadCount={unreadCount}
             linksError={linksError}
@@ -125,12 +116,16 @@ export default function ChildrenListScreen() {
           const name = childDisplayName(item);
           const verified = item.isVerified === true;
           const entry = progressions[item.linkedUserId];
+          const progression = verified
+            ? progressSummaryFor(item.linkedUserId)
+            : null;
           const isLoading =
             verified &&
             !entry?.data &&
             (entry?.state === "loading" ||
               entry?.state === "idle" ||
               entry == null);
+          const preview = verified ? progressPreview(progression) : null;
 
           return (
             <ChildProgressCard
@@ -138,11 +133,10 @@ export default function ChildrenListScreen() {
               avatarUrl={item.avatarUrl}
               verified={verified}
               isLoading={isLoading}
-              preview={
-                verified
-                  ? progressPreview(progressSummaryFor(item.linkedUserId))
-                  : null
+              statusLine={
+                verified ? progressStatusLine(progression) : "Chờ xác minh liên kết"
               }
+              percent={preview?.percent ?? null}
               newCount={verified ? newMilestoneCount(item.linkedUserId) : 0}
               onPress={() => {
                 if (!verified) return;
@@ -162,7 +156,6 @@ export default function ChildrenListScreen() {
 function HomeHeader({
   displayName,
   childCount,
-  activeCount,
   newUpdates,
   unreadCount,
   linksError,
@@ -170,7 +163,6 @@ function HomeHeader({
 }: {
   displayName: string;
   childCount: number;
-  activeCount: number;
   newUpdates: number;
   unreadCount: number;
   linksError: string | null;
@@ -218,40 +210,9 @@ function HomeHeader({
         </PressableScale>
       </View>
 
-      <View className="mt-5 flex-row gap-2">
-        <View
-          className="flex-[1.15] rounded-[20px] bg-card px-4 py-3.5"
-          style={TILE_SHADOW}
-        >
-          <Text
-            className="text-2xl font-bold text-foreground"
-            style={{ fontVariant: ["tabular-nums"] }}
-          >
-            {childCount}
-          </Text>
-          <Text className="mt-0.5 text-xs text-muted-foreground">
-            Con đã liên kết
-          </Text>
-        </View>
-        <View
-          className="flex-1 rounded-[20px] bg-card px-4 py-3.5"
-          style={TILE_SHADOW}
-        >
-          <Text
-            className="text-2xl font-bold text-foreground"
-            style={{ fontVariant: ["tabular-nums"] }}
-          >
-            {activeCount}
-          </Text>
-          <Text className="mt-0.5 text-xs text-muted-foreground">
-            Đang học
-          </Text>
-        </View>
-      </View>
-
       {newUpdates > 0 ? (
         <View
-          className="mt-2 rounded-[20px] px-4 py-3"
+          className="mt-4 rounded-2xl px-4 py-3"
           style={{ backgroundColor: `${colors.primary}14` }}
         >
           <Text className="text-sm font-medium text-primary">
@@ -279,12 +240,21 @@ function HomeSkeleton() {
       <View className="h-4 w-28 rounded-full bg-secondary" />
       <View className="mt-2 h-8 w-40 rounded-xl bg-secondary" />
       <View className="mt-2 h-4 w-56 rounded-full bg-secondary" />
-      <View className="mt-5 flex-row gap-2">
-        <View className="h-20 flex-1 rounded-[20px] bg-secondary" />
-        <View className="h-20 flex-1 rounded-[20px] bg-secondary" />
+      <View className="mt-6 h-5 w-24 rounded-lg bg-secondary" />
+      <View className="mt-3 h-[72px] flex-row items-center rounded-2xl border border-border bg-card px-4">
+        <View className="h-12 w-12 rounded-[14px] bg-secondary" />
+        <View className="ml-3 flex-1">
+          <View className="h-4 w-32 rounded-full bg-secondary" />
+          <View className="mt-2 h-3 w-48 rounded-full bg-secondary" />
+        </View>
       </View>
-      <View className="mt-6 h-24 rounded-[24px] bg-secondary" />
-      <View className="mt-3 h-24 rounded-[24px] bg-secondary" />
+      <View className="mt-3 h-[72px] flex-row items-center rounded-2xl border border-border bg-card px-4">
+        <View className="h-12 w-12 rounded-[14px] bg-secondary" />
+        <View className="ml-3 flex-1">
+          <View className="h-4 w-28 rounded-full bg-secondary" />
+          <View className="mt-2 h-3 w-40 rounded-full bg-secondary" />
+        </View>
+      </View>
     </View>
   );
 }
@@ -295,11 +265,3 @@ function timeGreeting(now = new Date()): string {
   if (hour < 18) return "Chào buổi chiều";
   return "Chào buổi tối";
 }
-
-const TILE_SHADOW = {
-  shadowColor: colors.foreground,
-  shadowOpacity: 0.04,
-  shadowRadius: 10,
-  shadowOffset: { width: 0, height: 4 },
-  elevation: 1,
-};

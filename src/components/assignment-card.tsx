@@ -1,9 +1,12 @@
 import { Text, View } from "react-native";
 
 import type { ParentAssignmentOutcome } from "@/lib/api";
-import { ScoreBar } from "@/components/score-bar";
 import { formatDateVi } from "@/lib/format/date";
-import { assignmentTypeLabel, toneHex } from "@/lib/parent/labels";
+import {
+  assignmentTypeLabel,
+  formatScore,
+  toneHex,
+} from "@/lib/parent/labels";
 import { assignmentOutcome } from "@/lib/parent/progress-insights";
 import { colors } from "@/lib/tokens/colors";
 
@@ -12,8 +15,7 @@ type AssignmentCardProps = {
 };
 
 /**
- * Inset secondary surface — reads as nested detail inside a module card,
- * not as another white bordered box.
+ * Compact assignment row — score as a chip beside outcome, no ScoreBar.
  */
 export function AssignmentCard({ assignment }: AssignmentCardProps) {
   const outcome = assignmentOutcome(assignment);
@@ -28,11 +30,20 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
         : `${assignment.attemptUsed}`
       : null;
 
+  const showPassHint =
+    assignment.passScore != null &&
+    (outcome.isOverdue ||
+      assignment.passed === false ||
+      (outcome.hasScore &&
+        assignment.score != null &&
+        assignment.passScore != null &&
+        assignment.score < assignment.passScore));
+
   return (
     <View className="mb-2 rounded-xl bg-secondary px-3 py-2.5">
       <View className="flex-row items-start justify-between gap-3">
         <View className="min-w-0 flex-1">
-          <Text className="text-sm font-medium text-foreground">
+          <Text className="text-sm font-medium text-foreground" numberOfLines={2}>
             {assignment.title?.trim() || "Bài tập"}
           </Text>
           <Text className="mt-0.5 text-xs text-muted-foreground">
@@ -40,55 +51,33 @@ export function AssignmentCard({ assignment }: AssignmentCardProps) {
             {assignment.isRequiredForModulePass ? " · Bắt buộc" : ""}
           </Text>
         </View>
-        <Text
-          className="text-xs font-semibold"
-          style={{ color: toneColor }}
-        >
-          {outcome.label}
-        </Text>
+
+        <View className="items-end gap-1">
+          {outcome.hasScore || outcome.isGraded ? (
+            <Text
+              className="text-sm font-bold"
+              style={{
+                color: scoreColor,
+                fontVariant: ["tabular-nums"],
+              }}
+            >
+              {formatScore(assignment.score, assignment.maxPoints)}
+            </Text>
+          ) : null}
+          <Text className="text-xs font-semibold" style={{ color: toneColor }}>
+            {outcome.label}
+          </Text>
+        </View>
       </View>
 
-      {outcome.hasScore || outcome.isGraded ? (
-        <View className="mt-2.5">
-          <View className="mb-1.5 flex-row items-baseline justify-between">
-            <View className="flex-row items-baseline gap-1">
-              <Text
-                className="text-xl font-bold leading-none"
-                style={{
-                  color: scoreColor,
-                  fontVariant: ["tabular-nums"],
-                }}
-              >
-                {assignment.score != null
-                  ? formatCompact(assignment.score)
-                  : "—"}
-              </Text>
-              {assignment.maxPoints != null ? (
-                <Text
-                  className="text-sm text-muted-foreground"
-                  style={{ fontVariant: ["tabular-nums"] }}
-                >
-                  /{formatCompact(assignment.maxPoints)}
-                </Text>
-              ) : null}
-            </View>
-            {assignment.passScore != null ? (
-              <Text className="text-[11px] text-muted-foreground">
-                Đạt từ {formatCompact(assignment.passScore)}
-              </Text>
-            ) : null}
-          </View>
-          <ScoreBar
-            score={assignment.score}
-            maxPoints={assignment.maxPoints}
-            passScore={assignment.passScore}
-            color={scoreColor}
-            trackColor={colors.card}
-            showPassLabel={false}
-          />
-        </View>
-      ) : assignment.maxPoints != null ? (
-        <Text className="mt-2 text-xs text-muted-foreground">
+      {showPassHint ? (
+        <Text className="mt-1.5 text-[11px] text-muted-foreground">
+          Đạt từ {formatCompact(assignment.passScore!)}
+        </Text>
+      ) : !outcome.hasScore &&
+        !outcome.isGraded &&
+        assignment.maxPoints != null ? (
+        <Text className="mt-1.5 text-[11px] text-muted-foreground">
           Thang điểm {formatCompact(assignment.maxPoints)}
           {assignment.passScore != null
             ? ` · Đạt từ ${formatCompact(assignment.passScore)}`

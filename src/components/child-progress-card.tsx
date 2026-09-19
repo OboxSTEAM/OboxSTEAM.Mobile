@@ -3,8 +3,8 @@ import { Text, View } from "react-native";
 
 import { ChildAvatar } from "@/components/child-avatar";
 import { PressableScale } from "@/components/pressable-scale";
-import { ProgressRing } from "@/components/progress-ring";
-import { formatPercent, type ProgressPreview } from "@/lib/parent/labels";
+import { StatusPill } from "@/components/status-pill";
+import { formatPercent } from "@/lib/parent/labels";
 import { colors } from "@/lib/tokens/colors";
 
 type ChildProgressCardProps = {
@@ -12,7 +12,8 @@ type ChildProgressCardProps = {
   avatarUrl?: string | null;
   verified: boolean;
   isLoading: boolean;
-  preview: ProgressPreview | null;
+  statusLine: string;
+  percent: number | null;
   newCount: number;
   onPress: () => void;
 };
@@ -22,87 +23,73 @@ export function ChildProgressCard({
   avatarUrl,
   verified,
   isLoading,
-  preview,
+  statusLine,
+  percent,
   newCount,
   onPress,
 }: ChildProgressCardProps) {
-  const subtitle = !verified
+  const line = !verified
     ? "Chờ xác minh liên kết"
     : isLoading
       ? "Đang tải tiến độ…"
-      : preview?.programName ?? "Chưa có chương trình đang học";
-
-  const detail =
-    verified && preview?.moduleName ? preview.moduleName : null;
+      : statusLine;
 
   return (
     <PressableScale
       accessibilityRole="button"
-      accessibilityLabel={`${name}. ${subtitle}`}
+      accessibilityLabel={`${name}. ${line}`}
       disabled={!verified}
       onPress={onPress}
       className="mb-3"
-      style={{ minHeight: 88 }}
+      style={{ minHeight: 72 }}
     >
-      <View className={verified ? undefined : "opacity-60"}>
-        <View className="rounded-[24px] bg-secondary p-1.5">
-          <View
-            className="flex-row items-center rounded-[18px] bg-card px-3.5 py-3.5"
-            style={CARD_SHADOW}
-          >
-            <ProgressRing percent={verified ? (preview?.percent ?? 0) : 0}>
-              <ChildAvatar
-                name={name}
-                avatarUrl={avatarUrl}
-                size={56}
-                radius={16}
-              />
-            </ProgressRing>
+      <View
+        className={`flex-row items-center rounded-2xl border border-border bg-card px-4 py-3 ${verified ? "" : "opacity-60"}`}
+        style={CARD_SHADOW}
+      >
+        <ChildAvatar name={name} avatarUrl={avatarUrl} size={48} radius={14} />
 
-            <View className="ml-3 flex-1">
-              <View className="flex-row items-center gap-2">
-                <Text
-                  className="flex-shrink text-base font-semibold text-foreground"
-                  numberOfLines={1}
-                >
-                  {name}
+        <View className="ml-3 min-w-0 flex-1">
+          <View className="flex-row items-center gap-2">
+            <Text
+              className="flex-shrink text-base font-semibold text-foreground"
+              numberOfLines={1}
+            >
+              {name}
+            </Text>
+            {newCount > 0 ? (
+              <View className="rounded-full bg-primary px-2 py-0.5">
+                <Text className="text-[11px] font-semibold text-primary-foreground">
+                  +{newCount} mới
                 </Text>
-                {newCount > 0 ? (
-                  <View className="rounded-full bg-primary px-2 py-0.5">
-                    <Text className="text-[11px] font-semibold text-primary-foreground">
-                      +{newCount} mới
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-
-              <Text
-                className="mt-0.5 text-sm text-muted-foreground"
-                numberOfLines={1}
-              >
-                {subtitle}
-              </Text>
-
-              {verified && preview?.percent != null ? (
-                <Text
-                  className="mt-1 text-sm font-semibold"
-                  style={{
-                    color: colors.steam.technology,
-                    fontVariant: ["tabular-nums"],
-                  }}
-                >
-                  {formatPercent(preview.percent)}
-                  {detail ? ` · ${detail}` : ""}
-                </Text>
-              ) : null}
-            </View>
-
-            {verified ? (
-              <View className="h-9 w-9 items-center justify-center rounded-full bg-secondary">
-                <ChevronRight color={colors.foreground} size={18} />
               </View>
             ) : null}
           </View>
+
+          <Text
+            className="mt-0.5 text-sm text-muted-foreground"
+            numberOfLines={1}
+          >
+            {line}
+          </Text>
+        </View>
+
+        <View className="ml-2 flex-row items-center gap-1.5">
+          {!verified ? (
+            <StatusPill label="Chờ xác minh" tone="warning" />
+          ) : percent != null && !isLoading ? (
+            <Text
+              className="text-base font-bold text-foreground"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {formatPercent(percent)}
+            </Text>
+          ) : null}
+          {verified ? (
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary">
+              <ChevronRight color={colors.foreground} size={18} />
+            </View>
+          ) : null}
         </View>
       </View>
     </PressableScale>
@@ -111,8 +98,8 @@ export function ChildProgressCard({
 
 const CARD_SHADOW = {
   shadowColor: colors.foreground,
-  shadowOpacity: 0.05,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: 6 },
-  elevation: 2,
+  shadowOpacity: 0.04,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 1,
 };

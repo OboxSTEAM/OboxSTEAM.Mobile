@@ -2,9 +2,7 @@ import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
 import { ChildAvatar } from "@/components/child-avatar";
 import { PressableScale } from "@/components/pressable-scale";
 import { ProgressBar } from "@/components/progress-bar";
-import { ProgressRing } from "@/components/progress-ring";
 import { ScreenState } from "@/components/screen-state";
-import { StatTile } from "@/components/stat-tile";
 import { StatusPill } from "@/components/status-pill";
 import type { ParentEnrollmentBrief, ParentProgressEvent } from "@/lib/api";
 import { formatRelativeVi } from "@/lib/format/date";
@@ -14,7 +12,8 @@ import {
   childDisplayName,
   enrollmentStatusLabel,
   formatPercent,
-  levelLabel,
+  PARENT_SECTIONS,
+  programsSectionTitle,
   progressEventLabel,
   toneHex,
   visibleBlockers,
@@ -30,16 +29,17 @@ import {
   ChevronRight,
   Clock3,
   Lock,
-  Play,
   type LucideIcon,
 } from "lucide-react-native";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
   Text,
   View,
 } from "react-native";
+
+const RECENT_PREVIEW = 3;
 
 function EnrollmentCard({
   enrollment,
@@ -49,11 +49,16 @@ function EnrollmentCard({
   onPress: () => void;
 }) {
   const status = enrollmentStatusLabel(enrollment.status);
-  const moduleName =
-    enrollment.currentModule?.moduleName?.trim() || "Chưa có module hiện tại";
-  const activityName = enrollment.currentActivity?.activityName?.trim();
   const blockers = visibleBlockers(enrollment.blockers);
-  const level = enrollment.level ? levelLabel(enrollment.level) : null;
+  const module = enrollment.currentModule;
+  const moduleName = module?.moduleName?.trim();
+  const activityName = enrollment.currentActivity?.activityName?.trim();
+  const nextLine = moduleName
+    ? module?.moduleOrder != null
+      ? `Tiếp theo: Module ${module.moduleOrder} · ${moduleName}`
+      : `Tiếp theo: ${moduleName}`
+    : null;
+  const primaryBlocker = blockers[0];
 
   return (
     <PressableScale
@@ -62,126 +67,94 @@ function EnrollmentCard({
       onPress={onPress}
       className="mb-3"
     >
-      <View className="rounded-[24px] bg-secondary p-1.5">
-        <View className="rounded-[18px] bg-card px-3.5 py-3.5" style={CARD_SHADOW}>
-          <View className="flex-row items-start gap-3">
-            <ProgressRing
-              percent={enrollment.progressPercent}
-              size={64}
-              strokeWidth={4}
-              color={toneHex(status.tone === "muted" ? "info" : status.tone)}
+      <View
+        className="rounded-2xl border border-border bg-card px-4 py-3.5"
+        style={CARD_SHADOW}
+      >
+        <View className="flex-row items-start justify-between gap-2">
+          <View className="min-w-0 flex-1">
+            <Text
+              className="text-base font-semibold text-foreground"
+              numberOfLines={2}
             >
-              <Text
-                className="text-sm font-bold text-foreground"
-                style={{ fontVariant: ["tabular-nums"] }}
-              >
-                {formatPercent(enrollment.progressPercent)}
-              </Text>
-            </ProgressRing>
-
-            <View className="min-w-0 flex-1">
-              <View className="flex-row items-start justify-between gap-2">
-                <View className="min-w-0 flex-1">
-                  <Text
-                    className="text-base font-semibold text-foreground"
-                    numberOfLines={2}
-                  >
-                    {enrollment.programName?.trim() || "Chương trình"}
-                  </Text>
-                  {enrollment.programCode ? (
-                    <Text className="mt-0.5 text-xs text-muted-foreground">
-                      {enrollment.programCode}
-                    </Text>
-                  ) : null}
-                </View>
-                <View className="h-9 w-9 items-center justify-center rounded-full bg-secondary">
-                  <ChevronRight color={colors.foreground} size={18} />
-                </View>
-              </View>
-
-              <View className="mt-2 flex-row flex-wrap gap-1.5">
-                <StatusPill label={status.label} tone={status.tone} />
-                {level && level !== "—" ? (
-                  <StatusPill label={level} tone="neutral" />
-                ) : null}
-              </View>
+              {enrollment.programName?.trim() || "Chương trình"}
+            </Text>
+            <View className="mt-2">
+              <StatusPill label={status.label} tone={status.tone} />
             </View>
           </View>
-
-          <View className="mt-3 rounded-xl bg-secondary px-3 py-2.5">
-            <View className="flex-row items-center gap-2">
-              <BookOpen color={colors.steam.engineering} size={16} />
-              <Text
-                className="flex-1 text-sm font-medium text-foreground"
-                numberOfLines={2}
-              >
-                {moduleName}
-              </Text>
-            </View>
-            {activityName ? (
-              <View className="mt-1.5 flex-row items-center gap-2">
-                <Play color={colors.mutedForeground} size={14} />
-                <Text
-                  className="flex-1 text-xs text-muted-foreground"
-                  numberOfLines={1}
-                >
-                  {activityName}
-                </Text>
-              </View>
-            ) : null}
+          <View className="h-9 w-9 items-center justify-center rounded-full bg-secondary">
+            <ChevronRight color={colors.foreground} size={18} />
           </View>
+        </View>
 
-          <View className="mt-3">
-            <View className="mb-1.5 flex-row items-center justify-between">
-              <Text className="text-xs text-muted-foreground">Tiến độ</Text>
-              <Text
-                className="text-xs font-semibold"
-                style={{
-                  color: colors.steam.technology,
-                  fontVariant: ["tabular-nums"],
-                }}
-              >
-                {formatPercent(enrollment.progressPercent)}
-              </Text>
-            </View>
-            <ProgressBar percent={enrollment.progressPercent} />
-          </View>
+        {nextLine ? (
+          <Text
+            className="mt-3 text-sm text-muted-foreground"
+            numberOfLines={2}
+          >
+            {nextLine}
+            {activityName ? ` · ${activityName}` : ""}
+          </Text>
+        ) : (
+          <Text className="mt-3 text-sm text-muted-foreground" numberOfLines={1}>
+            Truy cập gần nhất: {formatRelativeVi(enrollment.lastAccessedAt)}
+          </Text>
+        )}
 
-          <View className="mt-2.5 flex-row items-center gap-1.5">
-            <Clock3 color={colors.mutedForeground} size={14} />
-            <Text className="text-xs text-muted-foreground">
-              Truy cập gần nhất: {formatRelativeVi(enrollment.lastAccessedAt)}
+        <View className="mt-3">
+          <View className="mb-1.5 flex-row items-center justify-between">
+            <Text className="text-xs text-muted-foreground">Tiến độ</Text>
+            <Text
+              className="text-xs font-semibold text-foreground"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {formatPercent(enrollment.progressPercent)}
             </Text>
           </View>
-
-          {blockers.length > 0 ? (
-            <View className="mt-3 gap-1.5">
-              {blockers.map((blocker, index) => {
-                const mapped = blockerLabel(blocker.code);
-                const hex = toneHex(mapped.tone);
-                const Icon =
-                  blocker.code === "ModuleLocked" ? Lock : AlertTriangle;
-                return (
-                  <View
-                    key={`${blocker.code ?? "blocker"}-${index}`}
-                    className="flex-row items-start gap-2 rounded-xl px-3 py-2"
-                    style={{ backgroundColor: `${hex}14` }}
-                  >
-                    <Icon color={hex} size={14} style={{ marginTop: 2 }} />
-                    <Text
-                      className="flex-1 text-xs font-medium"
-                      style={{ color: hex }}
-                    >
-                      {blocker.message?.trim() || mapped.label}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
+          <ProgressBar percent={enrollment.progressPercent} />
         </View>
+
+        {primaryBlocker ? (
+          <InlineBlocker
+            message={
+              primaryBlocker.message?.trim() ||
+              blockerLabel(primaryBlocker.code).label
+            }
+            code={primaryBlocker.code}
+            extraCount={blockers.length - 1}
+          />
+        ) : null}
       </View>
     </PressableScale>
+  );
+}
+
+function InlineBlocker({
+  message,
+  code,
+  extraCount,
+}: {
+  message: string;
+  code?: string | null;
+  extraCount: number;
+}) {
+  const mapped = blockerLabel(code);
+  const hex = toneHex(mapped.tone);
+  const Icon = code === "ModuleLocked" ? Lock : AlertTriangle;
+  const label =
+    extraCount > 0 ? `${message} (+${extraCount})` : message;
+
+  return (
+    <View
+      className="mt-3 flex-row items-start gap-2 rounded-xl px-3 py-2"
+      style={{ backgroundColor: `${hex}14` }}
+    >
+      <Icon color={hex} size={14} style={{ marginTop: 2 }} />
+      <Text className="flex-1 text-xs font-medium" style={{ color: hex }}>
+        {label}
+      </Text>
+    </View>
   );
 }
 
@@ -235,23 +208,23 @@ function MilestoneRow({
 function ProgressSkeleton() {
   return (
     <View className="px-4 pt-2">
-      <View className="flex-row items-center gap-3 rounded-[24px] bg-secondary p-1.5">
-        <View className="h-[88px] flex-1 flex-row items-center rounded-[18px] bg-card px-4">
-          <View className="h-16 w-16 rounded-full bg-secondary" />
+      <View className="rounded-2xl border border-border bg-card px-4 py-3.5">
+        <View className="flex-row items-center">
+          <View className="h-14 w-14 rounded-[16px] bg-secondary" />
           <View className="ml-3 flex-1">
             <View className="h-5 w-36 rounded-lg bg-secondary" />
             <View className="mt-2 h-3 w-24 rounded-full bg-secondary" />
           </View>
+          <View className="h-8 w-12 rounded-lg bg-secondary" />
         </View>
+        <View className="mt-3 h-3 w-40 rounded-full bg-secondary" />
       </View>
-      <View className="mt-4 flex-row gap-2">
-        <View className="h-20 flex-1 rounded-[20px] bg-secondary" />
-        <View className="h-20 flex-1 rounded-[20px] bg-secondary" />
-        <View className="h-20 flex-1 rounded-[20px] bg-secondary" />
-      </View>
-      <View className="mt-5 h-5 w-28 rounded-lg bg-secondary" />
-      <View className="mt-3 h-36 rounded-[24px] bg-secondary" />
-      <View className="mt-3 h-36 rounded-[24px] bg-secondary" />
+      <View className="mt-5 h-5 w-40 rounded-lg bg-secondary" />
+      <View className="mt-3 h-32 rounded-2xl bg-secondary" />
+      <View className="mt-3 h-32 rounded-2xl bg-secondary" />
+      <View className="mt-5 h-5 w-24 rounded-lg bg-secondary" />
+      <View className="mt-3 h-16 rounded-2xl bg-secondary" />
+      <View className="mt-2 h-16 rounded-2xl bg-secondary" />
     </View>
   );
 }
@@ -274,6 +247,7 @@ export default function ChildProgressionScreen() {
 
   const link = links.find((item) => item.linkedUserId === studentId);
   const entry = studentId ? getProgression(studentId) : null;
+  const [showAllRecent, setShowAllRecent] = useState(false);
 
   useEffect(() => {
     if (!studentId) return;
@@ -284,6 +258,12 @@ export default function ChildProgressionScreen() {
     if (!studentId || entry?.state !== "ready") return;
     markChildSeen(studentId);
   }, [entry?.state, markChildSeen, studentId]);
+
+  const data = entry?.data;
+  const enrollments = useMemo(
+    () => visibleEnrollments(data?.enrollments),
+    [data?.enrollments],
+  );
 
   if (!studentId) {
     return (
@@ -328,7 +308,6 @@ export default function ChildProgressionScreen() {
     );
   }
 
-  const data = entry?.data;
   if (!data) {
     return (
       <ScreenState
@@ -342,10 +321,15 @@ export default function ChildProgressionScreen() {
   const student = data.student;
   const name = childDisplayName(student);
   const summary = data.summary;
-  const enrollments = visibleEnrollments(data.enrollments);
-  const milestones = (data.recentMilestones ?? []).slice(0, 5);
+  const allMilestones = data.recentMilestones ?? [];
+  const milestones = showAllRecent
+    ? allMilestones
+    : allMilestones.slice(0, RECENT_PREVIEW);
+  const hasMoreRecent = allMilestones.length > RECENT_PREVIEW;
   const overall = overallProgressPercent(enrollments);
-  const milestoneTotal = (data.recentMilestones ?? []).length;
+  const activeCount =
+    summary?.activeEnrollmentCount ??
+    enrollments.filter((item) => item.status === "Active").length;
 
   return (
     <ScrollView
@@ -365,26 +349,18 @@ export default function ChildProgressionScreen() {
         />
       }
     >
-      <View className="mb-4 rounded-[24px] bg-secondary p-1.5">
-        <View
-          className="flex-row items-center rounded-[18px] bg-card px-3.5 py-3.5"
-          style={CARD_SHADOW}
-        >
-          <ProgressRing
-            percent={overall}
-            size={80}
-            strokeWidth={4}
-            color={colors.steam.technology}
-          >
-            <ChildAvatar
-              name={name}
-              avatarUrl={student.avatarUrl}
-              size={62}
-              radius={18}
-            />
-          </ProgressRing>
-
-          <View className="ml-3 min-w-0 flex-1">
+      <View
+        className="mb-4 rounded-2xl border border-border bg-card px-4 py-3.5"
+        style={CARD_SHADOW}
+      >
+        <View className="flex-row items-center gap-3">
+          <ChildAvatar
+            name={name}
+            avatarUrl={student.avatarUrl}
+            size={56}
+            radius={16}
+          />
+          <View className="min-w-0 flex-1">
             <Text
               className="text-[22px] font-bold leading-7 text-foreground"
               numberOfLines={2}
@@ -400,40 +376,27 @@ export default function ChildProgressionScreen() {
                 tone={student.isVerified ? "success" : "warning"}
               />
             </View>
-            <View className="mt-2 flex-row items-center gap-1.5">
-              <Clock3 color={colors.mutedForeground} size={14} />
-              <Text className="text-xs text-muted-foreground">
-                Truy cập gần nhất:{" "}
-                {formatRelativeVi(summary?.lastAccessedAt)}
-              </Text>
-            </View>
           </View>
+          <View className="items-end">
+            <Text
+              className="text-[28px] font-bold leading-8 text-foreground"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {formatPercent(overall)}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-2.5 flex-row items-center gap-1.5">
+          <Clock3 color={colors.mutedForeground} size={14} />
+          <Text className="text-xs text-muted-foreground">
+            Truy cập gần nhất: {formatRelativeVi(summary?.lastAccessedAt)}
+          </Text>
         </View>
       </View>
 
-      <View className="mb-5 flex-row gap-2">
-        <StatTile
-          label="Đang học"
-          value={`${summary?.activeEnrollmentCount ?? 0}`}
-          icon={BookOpen}
-          accentColor={colors.steam.engineering}
-        />
-        <StatTile
-          label="Hoàn thành"
-          value={`${summary?.completedEnrollmentCount ?? 0}`}
-          icon={CheckCircle2}
-          accentColor={colors.steam.technology}
-        />
-        <StatTile
-          label="Cột mốc"
-          value={`${milestoneTotal}`}
-          icon={Clock3}
-          accentColor={colors.steam.arts}
-        />
-      </View>
-
       <Text className="mb-2 text-base font-semibold text-foreground">
-        Chương trình
+        {programsSectionTitle(activeCount)}
       </Text>
       {enrollments.length === 0 ? (
         <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-6">
@@ -461,22 +424,36 @@ export default function ChildProgressionScreen() {
       )}
 
       <Text className="mb-2 mt-2 text-base font-semibold text-foreground">
-        Cột mốc gần đây
+        {PARENT_SECTIONS.recent}
       </Text>
-      {milestones.length === 0 ? (
+      {allMilestones.length === 0 ? (
         <View className="rounded-2xl border border-border bg-card px-4 py-6">
           <Text className="text-center text-sm text-muted-foreground">
-            Chưa có cột mốc gần đây.
+            Chưa có cập nhật gần đây.
           </Text>
         </View>
       ) : (
-        milestones.map((event, index) => (
-          <MilestoneRow
-            key={event.id ?? `${event.type ?? "event"}-${index}`}
-            event={event}
-            isLast={index === milestones.length - 1}
-          />
-        ))
+        <>
+          {milestones.map((event, index) => (
+            <MilestoneRow
+              key={event.id ?? `${event.type ?? "event"}-${index}`}
+              event={event}
+              isLast={index === milestones.length - 1}
+            />
+          ))}
+          {hasMoreRecent && !showAllRecent ? (
+            <PressableScale
+              accessibilityRole="button"
+              accessibilityLabel="Xem thêm cập nhật gần đây"
+              onPress={() => setShowAllRecent(true)}
+              className="mt-1 min-h-11 items-center justify-center rounded-xl bg-secondary px-4"
+            >
+              <Text className="text-sm font-medium text-foreground">
+                Xem thêm ({allMilestones.length - RECENT_PREVIEW})
+              </Text>
+            </PressableScale>
+          ) : null}
+        </>
       )}
 
       {entry.error ? (
@@ -524,8 +501,8 @@ function milestoneTone(
 
 const CARD_SHADOW = {
   shadowColor: colors.foreground,
-  shadowOpacity: 0.05,
-  shadowRadius: 12,
-  shadowOffset: { width: 0, height: 6 },
-  elevation: 2,
+  shadowOpacity: 0.04,
+  shadowRadius: 8,
+  shadowOffset: { width: 0, height: 3 },
+  elevation: 1,
 };

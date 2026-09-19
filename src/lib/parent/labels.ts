@@ -206,7 +206,7 @@ export function formatPercent(value?: number | null): string {
 }
 
 /** Prefer active enrollments; otherwise the highest-progress one. */
-function pickPreviewEnrollment(
+export function pickPreviewEnrollment(
   enrollments: ParentEnrollmentBrief[] | null | undefined,
 ): ParentEnrollmentBrief | null {
   if (!enrollments?.length) return null;
@@ -267,4 +267,43 @@ export function progressSummaryLine(
     return `Hoàn thành: ${name}`;
   }
   return `${status}: ${name} · ${percent}`;
+}
+
+/**
+ * Home-row status without trailing percent (percent renders on the right).
+ * "Đang học: Robotics Foundation" or "Chưa có chương trình đang học".
+ */
+export function progressStatusLine(
+  progression?: ParentChildProgression | null,
+): string {
+  if (!progression) return "Đang tải tiến độ…";
+
+  const enrollments = visibleEnrollments(progression.enrollments);
+  if (enrollments.length === 0) return "Chưa có chương trình đang học";
+
+  const preview = pickPreviewEnrollment(enrollments);
+  if (!preview) return "Chưa có chương trình đang học";
+
+  const name = preview.programName?.trim() || "Chương trình";
+  const status = enrollmentStatusLabel(preview.status).label;
+
+  if (preview.status === "Active") {
+    return `Đang học: ${name}`;
+  }
+  if (preview.status === "Completed") {
+    return `Hoàn thành: ${name}`;
+  }
+  return `${status}: ${name}`;
+}
+
+export const PARENT_SECTIONS = {
+  programs: "Chương trình",
+  recent: "Gần đây",
+} as const;
+
+export function programsSectionTitle(activeCount: number): string {
+  if (activeCount > 0) {
+    return `Chương trình · ${activeCount} đang học`;
+  }
+  return PARENT_SECTIONS.programs;
 }

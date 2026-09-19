@@ -1,6 +1,6 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
+import { InfoRow } from "@/components/info-row";
 import { ModuleListItem } from "@/components/module-timeline-item";
-import { ProgressBar } from "@/components/progress-bar";
 import { ScreenState } from "@/components/screen-state";
 import { StatusPill } from "@/components/status-pill";
 import {
@@ -20,6 +20,13 @@ import {
 } from "@/lib/parent/progress-insights";
 import { colors } from "@/lib/tokens/colors";
 import { Stack, useLocalSearchParams } from "expo-router";
+import {
+  BookOpen,
+  Calendar,
+  Clock3,
+  Users,
+  UserRound,
+} from "lucide-react-native";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
@@ -31,12 +38,19 @@ import {
 function EnrollmentSkeleton() {
   return (
     <View className="px-4 pt-2">
-      <View className="h-28 rounded-2xl bg-secondary" />
-      <View className="mt-4 h-10 rounded-xl bg-secondary" />
-      <View className="mt-5 h-5 w-24 rounded-lg bg-secondary" />
-      <View className="mt-3 h-24 rounded-2xl bg-secondary" />
-      <View className="mt-3 h-24 rounded-2xl bg-secondary" />
-      <View className="mt-3 h-24 rounded-2xl bg-secondary" />
+      <View className="h-28 rounded-2xl border border-border bg-card px-4 py-3.5">
+        <View className="h-5 w-48 rounded-lg bg-secondary" />
+        <View className="mt-4 flex-row gap-6">
+          <View className="h-10 w-12 rounded-lg bg-secondary" />
+          <View className="h-10 w-12 rounded-lg bg-secondary" />
+          <View className="h-10 w-12 rounded-lg bg-secondary" />
+        </View>
+      </View>
+      <View className="mt-5 h-5 w-20 rounded-lg bg-secondary" />
+      <View className="mt-3 h-14 rounded-2xl bg-secondary" />
+      <View className="mt-2 h-14 rounded-2xl bg-secondary" />
+      <View className="mt-2 h-14 rounded-2xl bg-secondary" />
+      <View className="mt-2 h-14 rounded-2xl bg-secondary" />
     </View>
   );
 }
@@ -153,10 +167,6 @@ export default function EnrollmentDetailScreen() {
   const programTitle = header.programName?.trim() || "Chương trình";
   const moduleCounts = completedModuleCount(modules);
   const scoreSummary = enrollmentScoreSummary(modules);
-  const averageText =
-    scoreSummary.averageGrade != null
-      ? formatCompact(scoreSummary.averageGrade)
-      : "—";
 
   return (
     <>
@@ -176,7 +186,7 @@ export default function EnrollmentDetailScreen() {
           />
         }
       >
-        <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-3">
+        <View className="mb-4 rounded-2xl border border-border bg-card px-4 py-3.5">
           <View className="flex-row items-start justify-between gap-3">
             <View className="min-w-0 flex-1">
               <Text className="text-lg font-bold text-foreground">
@@ -191,70 +201,76 @@ export default function EnrollmentDetailScreen() {
             <StatusPill label={status.label} tone={status.tone} />
           </View>
 
-          <View className="mt-3">
-            <View className="mb-1.5 flex-row items-center justify-between">
-              <Text className="text-xs text-muted-foreground">Tiến độ</Text>
-              <Text
-                className="text-xs font-medium text-foreground"
-                style={{ fontVariant: ["tabular-nums"] }}
-              >
-                {formatPercent(header.progressPercent)}
-              </Text>
-            </View>
-            <ProgressBar percent={header.progressPercent} />
+          <View className="mt-4 flex-row gap-5">
+            <StatBlock
+              value={formatPercent(header.progressPercent)}
+              label="hoàn thành"
+            />
+            <StatBlock
+              value={`${moduleCounts.completed}/${moduleCounts.total}`}
+              label="module"
+            />
+            <StatBlock
+              value={`${scoreSummary.attentionCount}`}
+              label="cần chú ý"
+              emphasize={scoreSummary.attentionCount > 0}
+            />
           </View>
 
-          <Text className="mt-2 text-xs text-muted-foreground">
-            {moduleCounts.completed}/{moduleCounts.total} module hoàn thành
-            {" · "}
-            Truy cập {formatRelativeVi(header.lastAccessedAt)}
-          </Text>
-
-          {(data.classInfo?.className || data.classInfo?.mentorName) && (
-            <Text className="mt-1 text-xs text-muted-foreground">
-              {[
-                data.classInfo.className,
-                data.classInfo.mentorName
-                  ? `Mentor: ${data.classInfo.mentorName}`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </Text>
-          )}
-
-          {(header.enrolledAt || header.startedAt || header.completedAt) && (
-            <Text className="mt-1 text-xs text-muted-foreground">
-              {[
-                header.enrolledAt
-                  ? `Ghi danh ${formatDateVi(header.enrolledAt)}`
-                  : null,
-                header.startedAt
-                  ? `Bắt đầu ${formatDateVi(header.startedAt)}`
-                  : null,
-                header.completedAt
-                  ? `Hoàn thành ${formatDateVi(header.completedAt)}`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </Text>
-          )}
-        </View>
-
-        <View className="mb-4 flex-row rounded-2xl border border-border bg-card px-3 py-3">
-          <SummaryCell label="Điểm TB" value={averageText} />
-          <View className="mx-2 w-px self-stretch bg-border" />
-          <SummaryCell
-            label="Đã chấm"
-            value={`${scoreSummary.gradedCount}/${scoreSummary.totalAssignments}`}
-          />
-          <View className="mx-2 w-px self-stretch bg-border" />
-          <SummaryCell
-            label="Cần chú ý"
-            value={`${scoreSummary.attentionCount}`}
-            emphasize={scoreSummary.attentionCount > 0}
-          />
+          <View className="mt-3 border-t border-border pt-2">
+            {scoreSummary.averageGrade != null ? (
+              <InfoRow
+                icon={BookOpen}
+                label="Điểm TB"
+                value={formatCompact(scoreSummary.averageGrade)}
+              />
+            ) : null}
+            <InfoRow
+              icon={BookOpen}
+              label="Đã chấm"
+              value={`${scoreSummary.gradedCount}/${scoreSummary.totalAssignments}`}
+            />
+            <InfoRow
+              icon={Clock3}
+              label="Truy cập"
+              value={formatRelativeVi(header.lastAccessedAt)}
+            />
+            {data.classInfo?.className ? (
+              <InfoRow
+                icon={Users}
+                label="Lớp"
+                value={data.classInfo.className}
+              />
+            ) : null}
+            {data.classInfo?.mentorName ? (
+              <InfoRow
+                icon={UserRound}
+                label="Mentor"
+                value={data.classInfo.mentorName}
+              />
+            ) : null}
+            {header.enrolledAt ? (
+              <InfoRow
+                icon={Calendar}
+                label="Ghi danh"
+                value={formatDateVi(header.enrolledAt)}
+              />
+            ) : null}
+            {header.startedAt ? (
+              <InfoRow
+                icon={Calendar}
+                label="Bắt đầu"
+                value={formatDateVi(header.startedAt)}
+              />
+            ) : null}
+            {header.completedAt ? (
+              <InfoRow
+                icon={Calendar}
+                label="Hoàn thành"
+                value={formatDateVi(header.completedAt)}
+              />
+            ) : null}
+          </View>
         </View>
 
         <Text className="mb-2 text-base font-semibold text-foreground">
@@ -294,30 +310,27 @@ export default function EnrollmentDetailScreen() {
   );
 }
 
-function SummaryCell({
-  label,
+function StatBlock({
   value,
+  label,
   emphasize = false,
 }: {
-  label: string;
   value: string;
+  label: string;
   emphasize?: boolean;
 }) {
   return (
-    <View className="flex-1 items-center px-1">
+    <View>
       <Text
-        className="text-base font-semibold"
+        className="text-[22px] font-bold leading-7"
         style={{
           color: emphasize ? colors.primary : colors.foreground,
           fontVariant: ["tabular-nums"],
         }}
-        numberOfLines={1}
       >
         {value}
       </Text>
-      <Text className="mt-0.5 text-center text-[11px] text-muted-foreground">
-        {label}
-      </Text>
+      <Text className="mt-0.5 text-[11px] text-muted-foreground">{label}</Text>
     </View>
   );
 }
