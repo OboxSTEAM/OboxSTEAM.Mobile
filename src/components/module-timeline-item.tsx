@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  AccessibilityInfo,
   Animated,
-  Easing,
   LayoutAnimation,
+  Platform,
   Pressable,
   Text,
+  UIManager,
   View,
 } from "react-native";
 import {
@@ -19,6 +21,7 @@ import { AssignmentCard } from "@/components/assignment-card";
 import { StatusPill } from "@/components/status-pill";
 import type { ParentModuleProgress } from "@/lib/api";
 import { formatRelativeVi } from "@/lib/format/date";
+import { motion } from "@/lib/motion/tokens";
 import {
   enrollmentStatusLabel,
   formatPercent,
@@ -29,12 +32,18 @@ import {
 import { moduleAssignmentDigest } from "@/lib/parent/progress-insights";
 import { colors } from "@/lib/tokens/colors";
 
-const CHEVRON_MS = 220;
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
-/** Native layout animation — avoids JS-thread height tweening. */
-export function configureModuleExpandAnimation() {
+/** Accordion layout — transitions-dev 21: 250ms / ease-in-out for height. */
+export function configureModuleExpandAnimation(reduceMotion: boolean) {
+  if (reduceMotion) return;
   LayoutAnimation.configureNext({
-    duration: 250,
+    duration: motion.duration.fast,
     create: {
       type: LayoutAnimation.Types.easeInEaseOut,
       property: LayoutAnimation.Properties.opacity,
@@ -58,7 +67,7 @@ type ModuleListItemProps = {
   onToggle: () => void;
 };
 
-/** Compact status-rail row — expand uses LayoutAnimation (native). */
+/** Uniform card + status rail; accordion motion per transitions-dev 21. */
 export function ModuleListItem({
   module,
   index,
@@ -72,30 +81,68 @@ export function ModuleListItem({
   const digest = moduleAssignmentDigest(module);
   const assignments = module.assignments ?? [];
   const meta = moduleMetaLine(module, kind, digest.label);
-  const isCurrent = kind === "current";
 
+  const [reduceMotion, setReduceMotion] = useState(false);
   const rotate = useRef(new Animated.Value(expanded ? 1 : 0)).current;
+  const panelOpacity = useRef(new Animated.Value(expanded ? 1 : 0)).current;
+  const panelTranslate = useRef(
+    new Animated.Value(expanded ? 0 : motion.distance.base),
+  ).current;
 
   useEffect(() => {
-    Animated.timing(rotate, {
-      toValue: expanded ? 1 : 0,
-      duration: CHEVRON_MS,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-  }, [expanded, rotate]);
+    let mounted = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
+      if (mounted) setReduceMotion(enabled);
+    });
+    const sub = AccessibilityInfo.addEventListener?.(
+      "reduceMotionChanged",
+      setReduceMotion,
+    );
+    return () => {
+      mounted = false;
+      sub?.remove?.();
+    };
+  }, []);
 
-  const chevronSpin = rotate.interpolate({
+  useEffect(() => {
+    const duration = reduceMotion ? 0 : motion.duration.fast;
+    Animated.parallel([
+      Animated.timing(rotate, {
+        toValue: expanded ? 1 : 0,
+        duration,
+        easing: motion.easeSmoothOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(panelOpacity, {
+        toValue: expanded ? 1 : 0,
+        duration,
+        easing: motion.easeSmoothOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(panelTranslate, {
+        toValue: expanded ? 0 : motion.distance.base,
+        duration,
+        easing: motion.easeSmoothOut,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [expanded, panelOpacity, panelTranslate, reduceMotion, rotate]);
+
+  const chevronFlip = rotate.interpolate({
     inputRange: [0, 1],
-    outputRange: ["0deg", "180deg"],
+    // Collapsed = scaleY(1) → ChevronDown faces down; expanded = -1 → faces up.
+    outputRange: [1, -1],
   });
 
+  const pillLabel =
+    kind === "locked"
+      ? { label: "Khóa", tone: "muted" as const }
+      : kind === "todo"
+        ? { label: "Chưa bắt đầu", tone: "muted" as const }
+        : pill;
+
   return (
-    <View
-      className={`mb-1 overflow-hidden rounded-2xl ${
-        isCurrent ? "border border-border bg-card" : ""
-      }`}
-    >
+    <View className="mb-3 overflow-hidden rounded-2xl border border-border bg-card">
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded }}
@@ -104,12 +151,12 @@ export function ModuleListItem({
           module.isLocked
             ? undefined
             : () => {
-                configureModuleExpandAnimation();
+                configureModuleExpandAnimation(reduceMotion);
                 onToggle();
               }
         }
         disabled={!!module.isLocked}
-        className="flex-row items-start gap-3 px-3 py-2.5 active:opacity-90"
+        className="flex-row items-start gap-3 px-3.5 py-3 active:opacity-90"
       >
         <ModuleStatusIcon kind={kind} />
 
@@ -128,11 +175,11 @@ export function ModuleListItem({
               </Text>
             </View>
             <View className="flex-row items-center gap-1.5">
-              {kind !== "locked" && kind !== "todo" ? (
-                <StatusPill label={pill.label} tone={pill.tone} />
-              ) : null}
+              <StatusPill label={pillLabel.label} tone={pillLabel.tone} />
               {!module.isLocked ? (
-                <Animated.View style={{ transform: [{ rotate: chevronSpin }] }}>
+                <Animated.View
+                  style={{ transform: [{ scaleY: chevronFlip }] }}
+                >
                   <ChevronDown color={colors.mutedForeground} size={18} />
                 </Animated.View>
               ) : null}
@@ -151,7 +198,13 @@ export function ModuleListItem({
       </Pressable>
 
       {!module.isLocked && expanded ? (
-        <View className="border-t border-border px-3 pb-3 pt-2">
+        <Animated.View
+          className="border-t border-border px-3.5 pb-3 pt-2"
+          style={{
+            opacity: panelOpacity,
+            transform: [{ translateY: panelTranslate }],
+          }}
+        >
           {module.finalGrade != null ? (
             <Text
               className="mb-1.5 text-sm font-medium text-foreground"
@@ -174,10 +227,12 @@ export function ModuleListItem({
                 Bài tập ({assignments.length})
               </Text>
               {assignments.map((assignment, assignmentIndex) => (
-                <AssignmentCard
+                <StaggeredAssignment
                   key={
                     assignment.assignmentId ?? `assignment-${assignmentIndex}`
                   }
+                  index={assignmentIndex}
+                  reduceMotion={reduceMotion}
                   assignment={assignment}
                 />
               ))}
@@ -187,7 +242,7 @@ export function ModuleListItem({
               Chưa có bài tập trong module này.
             </Text>
           )}
-        </View>
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -195,6 +250,52 @@ export function ModuleListItem({
 
 /** @deprecated Use ModuleListItem — kept as alias for any leftover imports. */
 export const ModuleTimelineItem = ModuleListItem;
+
+function StaggeredAssignment({
+  assignment,
+  index,
+  reduceMotion,
+}: {
+  assignment: Parameters<typeof AssignmentCard>[0]["assignment"];
+  index: number;
+  reduceMotion: boolean;
+}) {
+  const opacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const translate = useRef(
+    new Animated.Value(reduceMotion ? 0 : motion.distance.micro),
+  ).current;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      opacity.setValue(1);
+      translate.setValue(0);
+      return;
+    }
+    const delay = Math.min(index, 6) * motion.duration.stagger;
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: motion.duration.fast,
+        delay,
+        easing: motion.easeSmoothOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translate, {
+        toValue: 0,
+        duration: motion.duration.fast,
+        delay,
+        easing: motion.easeSmoothOut,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [index, opacity, reduceMotion, translate]);
+
+  return (
+    <Animated.View style={{ opacity, transform: [{ translateY: translate }] }}>
+      <AssignmentCard assignment={assignment} />
+    </Animated.View>
+  );
+}
 
 function ModuleStatusIcon({ kind }: { kind: ModuleKind }) {
   if (kind === "done") {
@@ -213,7 +314,11 @@ function ModuleStatusIcon({ kind }: { kind: ModuleKind }) {
         className="mt-0.5 h-[22px] w-[22px] items-center justify-center rounded-full"
         style={{ backgroundColor: colors.steam.engineering }}
       >
-        <Play color={colors.primaryForeground} size={11} fill={colors.primaryForeground} />
+        <Play
+          color={colors.primaryForeground}
+          size={11}
+          fill={colors.primaryForeground}
+        />
       </View>
     );
   }
