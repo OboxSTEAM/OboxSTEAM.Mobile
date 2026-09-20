@@ -1,13 +1,17 @@
 import { AnimatedDock } from "@/components/animated-dock";
 import { useAuth } from "@/lib/auth/auth-context";
+import {
+  getHomeHrefForRole,
+  isParentRole,
+} from "@/lib/auth/roles";
 import { NotificationsProvider } from "@/lib/notifications/notifications-context";
 import { ChildrenProvider } from "@/lib/parent/children-context";
 import { colors } from "@/lib/tokens/colors";
 import { Redirect } from "expo-router";
 import { Tabs } from "expo-router/js-tabs";
 
-export default function AppLayout() {
-  const { status } = useAuth();
+export default function ParentLayout() {
+  const { status, user } = useAuth();
 
   if (status === "guest") {
     return <Redirect href="/welcome" />;
@@ -17,6 +21,9 @@ export default function AppLayout() {
   }
   if (status !== "authenticated") {
     return null;
+  }
+  if (!isParentRole(user?.role)) {
+    return <Redirect href={getHomeHrefForRole(user?.role)} />;
   }
 
   return (

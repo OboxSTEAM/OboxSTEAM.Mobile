@@ -1,6 +1,6 @@
 import { getCurrentUser, login as apiLogin, type UserProfile } from "@/lib/api";
 import { ApiRequestError } from "@/lib/api/errors";
-import { isParentRole } from "@/lib/auth/roles";
+import { isMobileSupportedRole } from "@/lib/auth/roles";
 import {
   clearAuthSession,
   getAuthSession,
@@ -56,10 +56,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [blockReason, setBlockReason] = useState<string | null>(null);
 
   const applyProfile = useCallback((profile: UserProfile) => {
-    if (!isParentRole(profile.role)) {
+    if (!isMobileSupportedRole(profile.role)) {
       setUser(profile);
       setBlockReason(
-        "Ứng dụng di động hiện chỉ hỗ trợ tài khoản Parent. Vui lòng dùng website cho vai trò khác.",
+        "Ứng dụng di động hỗ trợ Parent, Student và Mentor. Vai trò của bạn vui lòng dùng website.",
       );
       setStatus("blocked");
       return;

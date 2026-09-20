@@ -4,7 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-/** Non-Parent roles after login / session restore. */
+/** Unsupported roles (Manager, Expert, …) after login / session restore. */
 export default function BlockedRoleScreen() {
   const { user, blockReason, signOut } = useAuth();
   const router = useRouter();
@@ -18,7 +18,7 @@ export default function BlockedRoleScreen() {
         </Text>
         <Text className="mt-3 text-center text-base leading-6 text-muted-foreground">
           {blockReason ??
-            "Ứng dụng di động hiện chỉ hỗ trợ tài khoản Parent. Vui lòng dùng website."}
+            "Ứng dụng di động hỗ trợ Parent, Student và Mentor. Vai trò của bạn vui lòng dùng website."}
         </Text>
         {user?.role ? (
           <Text className="mt-2 text-center text-sm text-muted-foreground">

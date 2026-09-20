@@ -27,7 +27,9 @@ export default function RootLayout() {
         />
         <Stack.Screen name="(guest)" />
         <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(app)" />
+        <Stack.Screen name="(parent)" />
+        <Stack.Screen name="(student)" />
+        <Stack.Screen name="(mentor)" />
         <Stack.Screen name="blocked" />
       </Stack>
     </AuthProvider>

@@ -1,4 +1,5 @@
 import { formatAuthError, useAuth } from "@/lib/auth/auth-context";
+import { getHomeHrefForRole } from "@/lib/auth/roles";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
@@ -17,7 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signIn, status } = useAuth();
+  const { signIn, status, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -31,11 +32,11 @@ export default function LoginScreen() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.replace("/children");
+      router.replace(getHomeHrefForRole(user?.role));
     } else if (status === "blocked") {
       router.replace("/blocked");
     }
-  }, [status, router]);
+  }, [status, user?.role, router]);
 
   const onSubmit = handleSubmit(async (values) => {
     setIsSubmitting(true);
@@ -64,7 +65,8 @@ export default function LoginScreen() {
         <View className="mt-8">
           <Text className="text-3xl font-bold text-foreground">Đăng nhập</Text>
           <Text className="mt-2 text-base text-muted-foreground">
-            Dùng email và mật khẩu tài khoản Parent OboxSTEAM.
+            Đăng nhập bằng email và mật khẩu tài khoản OboxSTEAM (Parent,
+            Student hoặc Mentor).
           </Text>
         </View>
 

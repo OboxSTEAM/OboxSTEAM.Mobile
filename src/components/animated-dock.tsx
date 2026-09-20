@@ -1,7 +1,15 @@
 import { colors } from "@/lib/tokens/colors";
 import { useOptionalNotifications } from "@/lib/notifications/notifications-context";
 import type { BottomTabBarProps } from "expo-router/js-tabs";
-import { Bell, UserRound, Users, type LucideIcon } from "lucide-react-native";
+import {
+  Bell,
+  CalendarDays,
+  QrCode,
+  Sun,
+  UserRound,
+  Users,
+  type LucideIcon,
+} from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -23,6 +31,9 @@ const TAB_META: Record<string, { label: string; Icon: LucideIcon }> = {
   children: { label: "Con của bạn", Icon: Users },
   notifications: { label: "Thông báo", Icon: Bell },
   profile: { label: "Tài khoản", Icon: UserRound },
+  schedule: { label: "Lịch", Icon: CalendarDays },
+  "check-in": { label: "Check-in", Icon: QrCode },
+  today: { label: "Hôm nay", Icon: Sun },
 };
 
 export function AnimatedDock({

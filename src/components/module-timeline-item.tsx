@@ -3,10 +3,8 @@ import {
   AccessibilityInfo,
   Animated,
   LayoutAnimation,
-  Platform,
   Pressable,
   Text,
-  UIManager,
   View,
 } from "react-native";
 import {
@@ -31,13 +29,6 @@ import {
 } from "@/lib/parent/labels";
 import { moduleAssignmentDigest } from "@/lib/parent/progress-insights";
 import { colors } from "@/lib/tokens/colors";
-
-if (
-  Platform.OS === "android" &&
-  UIManager.setLayoutAnimationEnabledExperimental
-) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 /** Accordion layout — transitions-dev 21: 250ms / ease-in-out for height. */
 export function configureModuleExpandAnimation(reduceMotion: boolean) {

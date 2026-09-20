@@ -1,5 +1,6 @@
 import { BRAND_LOGO, BRAND_NAME } from "@/lib/brand";
 import { useAuth } from "@/lib/auth/auth-context";
+import { getHomeHrefForRole } from "@/lib/auth/roles";
 import { useRouter } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useMemo, useRef } from "react";
@@ -37,13 +38,15 @@ function createLetterAnim(): LetterAnim {
  */
 export default function IntroScreen() {
   const router = useRouter();
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const hasAdvanced = useRef(false);
   const authStatusRef = useRef(status);
+  const authRoleRef = useRef(user?.role);
 
   useEffect(() => {
     authStatusRef.current = status;
-  }, [status]);
+    authRoleRef.current = user?.role;
+  }, [status, user?.role]);
 
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.7)).current;
@@ -150,7 +153,7 @@ export default function IntroScreen() {
 
       const next = authStatusRef.current;
       if (next === "authenticated") {
-        router.replace("/children");
+        router.replace(getHomeHrefForRole(authRoleRef.current));
       } else if (next === "blocked") {
         router.replace("/blocked");
       } else {
