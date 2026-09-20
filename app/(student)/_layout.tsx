@@ -1,4 +1,4 @@
-import { AnimatedDock } from "@/components/animated-dock";
+import { RoleDock } from "@/components/role-dock";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   getHomeHrefForRole,
@@ -26,7 +26,7 @@ export default function StudentLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <AnimatedDock {...props} />}
+      tabBar={(props) => <RoleDock {...props} />}
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: colors.background },

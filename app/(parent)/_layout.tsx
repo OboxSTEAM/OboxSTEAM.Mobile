@@ -1,4 +1,4 @@
-import { AnimatedDock } from "@/components/animated-dock";
+import { RoleDock } from "@/components/role-dock";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   getHomeHrefForRole,
@@ -30,7 +30,7 @@ export default function ParentLayout() {
     <ChildrenProvider>
       <NotificationsProvider>
         <Tabs
-          tabBar={(props) => <AnimatedDock {...props} />}
+          tabBar={(props) => <RoleDock {...props} />}
           screenOptions={{
             headerShown: false,
             sceneStyle: { backgroundColor: colors.background },
@@ -40,7 +40,7 @@ export default function ParentLayout() {
             name="children"
             options={{
               title: "Con của bạn",
-              tabBarLabel: "Con của bạn",
+              tabBarLabel: "Con",
             }}
           />
           <Tabs.Screen
