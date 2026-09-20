@@ -41,12 +41,11 @@ export default function ParentScheduleScreen() {
     void (async () => {
       const saved = await loadSelectedScheduleStudentId();
       if (cancelled) return;
-      if (saved && verifiedChildren.some((c) => c.linkedUserId === saved)) {
-        setStudentId(saved);
-        return;
-      }
-      const first = verifiedChildren[0]?.linkedUserId ?? null;
-      setStudentId(first);
+      const nextId =
+        saved && verifiedChildren.some((c) => c.linkedUserId === saved)
+          ? saved
+          : (verifiedChildren[0]?.linkedUserId ?? null);
+      setStudentId((prev) => (prev === nextId ? prev : nextId));
     })();
     return () => {
       cancelled = true;

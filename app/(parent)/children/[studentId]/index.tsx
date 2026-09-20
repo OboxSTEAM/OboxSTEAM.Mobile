@@ -412,7 +412,7 @@ export default function ChildProgressionScreen() {
             onPress={() => {
               router.push({
                 pathname:
-                  "/children/[studentId]/enrollments/[enrollmentId]",
+                  "/(parent)/children/[studentId]/enrollments/[enrollmentId]",
                 params: {
                   studentId,
                   enrollmentId: enrollment.enrollmentId,

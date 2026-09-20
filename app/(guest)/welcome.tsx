@@ -73,7 +73,7 @@ export default function WelcomeScreen() {
           style={{ backgroundColor: `${colors.steam.engineering}18` }}
         />
 
-        <Animated.View className="flex-1" style={enterStyle}>
+        <Animated.View style={[{ flex: 1 }, enterStyle]}>
           <View className="relative overflow-visible pt-8">
             <Image
               source={BRAND_LOGO}

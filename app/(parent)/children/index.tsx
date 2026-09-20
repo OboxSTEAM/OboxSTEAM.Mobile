@@ -102,7 +102,7 @@ export default function ChildrenListScreen() {
             newUpdates={snapshot.newUpdates}
             unreadCount={unreadCount}
             linksError={linksError}
-            onOpenNotifications={() => router.push("/notifications")}
+            onOpenNotifications={() => router.push("/(parent)/notifications")}
           />
         }
         ListEmptyComponent={
@@ -141,7 +141,7 @@ export default function ChildrenListScreen() {
               onPress={() => {
                 if (!verified) return;
                 router.push({
-                  pathname: "/children/[studentId]",
+                  pathname: "/(parent)/children/[studentId]",
                   params: { studentId: item.linkedUserId },
                 });
               }}

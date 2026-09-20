@@ -51,7 +51,7 @@ export function WeeklyScheduleView({
   emptyMessage = "Ngày này chưa có lịch trong tuần.",
 }: WeeklyScheduleViewProps) {
   const weekDates = useMemo(() => buildWeekDates(weekStart), [weekStart]);
-  const today = todayIsoInHcm();
+  const today = useMemo(() => todayIsoInHcm(), []);
   const defaultSelected =
     weekDates.find((d) => d === today) ?? weekDates[0] ?? weekStart;
   const [selectedDate, setSelectedDate] = useState(defaultSelected);
@@ -59,7 +59,7 @@ export function WeeklyScheduleView({
   useEffect(() => {
     const next =
       weekDates.find((d) => d === today) ?? weekDates[0] ?? weekStart;
-    setSelectedDate(next);
+    setSelectedDate((prev) => (prev === next ? prev : next));
   }, [weekStart, weekDates, today]);
 
   const sessions = sessionsForDay(schedule, selectedDate);

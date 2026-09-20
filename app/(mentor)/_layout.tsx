@@ -6,10 +6,17 @@ import {
 } from "@/lib/auth/roles";
 import { colors } from "@/lib/tokens/colors";
 import { Redirect } from "expo-router";
-import { Tabs } from "expo-router/js-tabs";
+import { Tabs, type BottomTabBarProps } from "expo-router/js-tabs";
+import { useCallback } from "react";
 
 export default function MentorLayout() {
   const { status, user } = useAuth();
+
+  const renderTabBar = useCallback((props: BottomTabBarProps) => {
+    const focused = props.state.routes[props.state.index]?.name ?? "";
+    if (focused.startsWith("qr")) return null;
+    return <RoleDock {...props} />;
+  }, []);
 
   if (status === "guest") {
     return <Redirect href="/welcome" />;
@@ -26,7 +33,7 @@ export default function MentorLayout() {
 
   return (
     <Tabs
-      tabBar={(props) => <RoleDock {...props} />}
+      tabBar={renderTabBar}
       screenOptions={{
         headerShown: false,
         sceneStyle: { backgroundColor: colors.background },
@@ -37,6 +44,13 @@ export default function MentorLayout() {
         options={{
           title: "Hôm nay",
           tabBarLabel: "Hôm nay",
+        }}
+      />
+      <Tabs.Screen
+        name="qr/[sessionId]"
+        options={{
+          href: null,
+          title: "QR điểm danh",
         }}
       />
     </Tabs>

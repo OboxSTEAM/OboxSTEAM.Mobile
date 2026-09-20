@@ -40,7 +40,14 @@
           "imageWidth": 180
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép OboxSTEAM dùng camera để quét mã điểm danh.",
+          "barcodeScannerEnabled": true
+        }
+      ]
     ],
     "extra": {
       "router": {},

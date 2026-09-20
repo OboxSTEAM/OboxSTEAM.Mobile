@@ -4,6 +4,7 @@ import {
   Animated,
   LayoutAnimation,
   Pressable,
+  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -190,8 +191,12 @@ export function ModuleListItem({
 
       {!module.isLocked && expanded ? (
         <Animated.View
-          className="border-t border-border px-3.5 pb-3 pt-2"
           style={{
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: colors.border,
+            paddingHorizontal: 14,
+            paddingBottom: 12,
+            paddingTop: 8,
             opacity: panelOpacity,
             transform: [{ translateY: panelTranslate }],
           }}

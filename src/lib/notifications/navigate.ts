@@ -44,7 +44,7 @@ export function navigateNotificationRoute(
 ): boolean {
   if (route.kind === "child") {
     router.push({
-      pathname: "/children/[studentId]",
+      pathname: "/(parent)/children/[studentId]",
       params: { studentId: route.studentId },
     });
     return true;
@@ -52,7 +52,7 @@ export function navigateNotificationRoute(
 
   if (route.kind === "enrollment") {
     router.push({
-      pathname: "/children/[studentId]/enrollments/[enrollmentId]",
+      pathname: "/(parent)/children/[studentId]/enrollments/[enrollmentId]",
       params: {
         studentId: route.studentId,
         enrollmentId: route.enrollmentId,

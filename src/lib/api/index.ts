@@ -50,3 +50,17 @@ export type {
   ScheduleSessionKind,
   WeeklySchedule,
 } from "@/lib/api/schedules";
+
+export {
+  checkInByToken,
+  listClasses,
+  listClassSessions,
+  rotateCheckInToken,
+} from "@/lib/api/class-sessions";
+export type {
+  CheckInRequest,
+  CheckInToken,
+  ClassSession,
+  ClassSummary,
+  SessionAttendance,
+} from "@/lib/api/class-sessions";

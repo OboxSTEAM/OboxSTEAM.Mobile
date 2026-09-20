@@ -164,4 +164,45 @@ export function createApiPatchWith<TParams, TValue extends z.ZodType>({
   };
 }
 
+/** POST with path params and optional JSON body. */
+export function createApiPostWith<
+  TParams,
+  TValue extends z.ZodType,
+  TInput extends z.ZodType = z.ZodNever,
+>({
+  path,
+  value,
+  input,
+  skipAuth,
+}: {
+  path: (params: TParams) => string;
+  value: TValue;
+  input?: TInput;
+  skipAuth?: boolean;
+}) {
+  const responseSchema = createApiResponseSchema(value);
+
+  return async (
+    params: TParams,
+    body?: TInput extends z.ZodNever ? undefined : z.infer<TInput>,
+    options?: EndpointAuthOptions,
+  ): Promise<z.infer<TValue>> => {
+    const parsedBody =
+      input && body !== undefined ? input.parse(body) : undefined;
+    const response = await apiFetch(path(params), {
+      method: "POST",
+      body: parsedBody,
+      skipAuth: options?.skipAuth ?? skipAuth,
+      signal: options?.signal,
+    });
+    const json = await parseJsonOrThrow(response);
+    const envelope = responseSchema.parse(json);
+    assertApiSuccess(envelope);
+    if (!envelope.value) {
+      throw new Error("Phản hồi API thiếu value.");
+    }
+    return envelope.value;
+  };
+}
+
 export type MessageOnlyValue = z.infer<typeof apiValueMessageOnlySchema>;

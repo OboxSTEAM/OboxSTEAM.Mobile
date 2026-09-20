@@ -23,12 +23,17 @@ export function isMobileSupportedRole(
   return isParentRole(role) || isStudentRole(role) || isMentorRole(role);
 }
 
-/** Post-login / bootstrap home for a supported role. */
+/**
+ * Post-login / bootstrap home for a supported role.
+ * Group-qualified paths are required: `(parent)/schedule` and
+ * `(student)/schedule` both map to `/schedule` and ambiguous
+ * `router.replace("/schedule")` can Redirect-loop across layouts.
+ */
 export function getHomeHrefForRole(
   role: string | undefined | null,
 ): Href {
-  if (isParentRole(role)) return "/children";
-  if (isStudentRole(role)) return "/schedule";
-  if (isMentorRole(role)) return "/today";
+  if (isParentRole(role)) return "/(parent)/children";
+  if (isStudentRole(role)) return "/(student)/schedule";
+  if (isMentorRole(role)) return "/(mentor)/today";
   return "/blocked";
 }

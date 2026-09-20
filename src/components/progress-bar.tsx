@@ -36,8 +36,10 @@ export function ProgressBar({
       accessibilityValue={{ min: 0, max: 100, now: Math.round(clamped) }}
     >
       <Animated.View
-        className="h-full w-full rounded-full"
         style={{
+          height: "100%",
+          width: "100%",
+          borderRadius: 999,
           backgroundColor: color,
           transformOrigin: "0% 50%",
           transform: [{ scaleX: progress }],
