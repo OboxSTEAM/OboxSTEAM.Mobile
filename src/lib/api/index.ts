@@ -41,3 +41,12 @@ export type {
   Notification,
   NotificationUnreadCount,
 } from "@/lib/api/notifications";
+
+export { getWeeklySchedule } from "@/lib/api/schedules";
+export type {
+  ScheduleAttendanceStatus,
+  ScheduleDay,
+  ScheduleSession,
+  ScheduleSessionKind,
+  WeeklySchedule,
+} from "@/lib/api/schedules";

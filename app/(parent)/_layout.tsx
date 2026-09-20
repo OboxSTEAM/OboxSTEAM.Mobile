@@ -44,6 +44,13 @@ export default function ParentLayout() {
             }}
           />
           <Tabs.Screen
+            name="schedule"
+            options={{
+              title: "Lịch",
+              tabBarLabel: "Lịch",
+            }}
+          />
+          <Tabs.Screen
             name="notifications"
             options={{
               title: "Thông báo",
