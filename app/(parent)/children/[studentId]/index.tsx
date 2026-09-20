@@ -1,10 +1,17 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
 import { ChildAvatar } from "@/components/child-avatar";
+import { ChildTodayAttendance } from "@/components/child-today-attendance";
 import { PressableScale } from "@/components/pressable-scale";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScreenState } from "@/components/screen-state";
 import { StatusPill } from "@/components/status-pill";
-import type { ParentEnrollmentBrief, ParentProgressEvent } from "@/lib/api";
+import type {
+  ParentEnrollmentBrief,
+  ParentProgressEvent,
+  ScheduleSession,
+} from "@/lib/api";
+import { getWeeklySchedule } from "@/lib/api/schedules";
+import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import { formatRelativeVi } from "@/lib/format/date";
 import { useChildren } from "@/lib/parent/children-context";
 import {
@@ -20,6 +27,11 @@ import {
   visibleEnrollments,
 } from "@/lib/parent/labels";
 import { overallProgressPercent } from "@/lib/parent/progress-insights";
+import {
+  isLiveSessionKind,
+  sessionsForDay,
+  todayIsoInHcm,
+} from "@/lib/schedule/week";
 import { colors } from "@/lib/tokens/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
@@ -31,7 +43,7 @@ import {
   Lock,
   type LucideIcon,
 } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   RefreshControl,
   ScrollView,
@@ -248,11 +260,40 @@ export default function ChildProgressionScreen() {
   const link = links.find((item) => item.linkedUserId === studentId);
   const entry = studentId ? getProgression(studentId) : null;
   const [showAllRecent, setShowAllRecent] = useState(false);
+  const [todaySessions, setTodaySessions] = useState<ScheduleSession[]>([]);
+  const [todayLoadState, setTodayLoadState] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [todayError, setTodayError] = useState<string | null>(null);
+
+  const loadTodayAttendance = useCallback(async () => {
+    if (!studentId) return;
+    setTodayLoadState((prev) => (prev === "ready" ? "ready" : "loading"));
+    setTodayError(null);
+    try {
+      const value = await getWeeklySchedule({ studentId });
+      const today = todayIsoInHcm();
+      const sessions = sessionsForDay(value.data ?? null, today).filter(
+        (session) => isLiveSessionKind(session.sessionKind),
+      );
+      setTodaySessions(sessions);
+      setTodayLoadState("ready");
+    } catch (err) {
+      setTodayError(resolveAppError(err).reason);
+      setTodayLoadState("error");
+    }
+  }, [studentId]);
 
   useEffect(() => {
     if (!studentId) return;
     void refreshProgression(studentId);
   }, [refreshProgression, studentId]);
+
+  useEffect(() => {
+    if (!studentId) return;
+    if (link && link.isVerified === false) return;
+    void loadTodayAttendance();
+  }, [link, loadTodayAttendance, studentId]);
 
   useEffect(() => {
     if (!studentId || entry?.state !== "ready") return;
@@ -342,9 +383,10 @@ export default function ChildProgressionScreen() {
       refreshControl={
         <RefreshControl
           refreshing={entry.state === "refreshing"}
-          onRefresh={() =>
-            void refreshProgression(studentId, { force: true })
-          }
+          onRefresh={() => {
+            void refreshProgression(studentId, { force: true });
+            void loadTodayAttendance();
+          }}
           tintColor={colors.primary}
         />
       }
@@ -394,6 +436,12 @@ export default function ChildProgressionScreen() {
           </Text>
         </View>
       </View>
+
+      <ChildTodayAttendance
+        sessions={todaySessions}
+        isLoading={todayLoadState === "loading" || todayLoadState === "idle"}
+        error={todayError}
+      />
 
       <Text className="mb-2 text-base font-semibold text-foreground">
         {programsSectionTitle(activeCount)}

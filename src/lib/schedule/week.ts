@@ -127,6 +127,32 @@ export function attendanceStatusLabel(
   }
 }
 
+/** Offline / live sessions — same filter as Mentor QR / Parent check-in strip. */
+export function isLiveSessionKind(
+  kind: ScheduleSessionKind | null | undefined,
+): boolean {
+  return kind === "Offline" || kind === "LiveOnline";
+}
+
+export function attendanceStatusTone(
+  status: ScheduleAttendanceStatus | null | undefined,
+): "success" | "warning" | "danger" | "info" | "muted" | "neutral" {
+  switch (status) {
+    case "Present":
+      return "success";
+    case "Late":
+      return "warning";
+    case "Absent":
+      return "danger";
+    case "Excused":
+      return "info";
+    case "Expected":
+      return "muted";
+    default:
+      return "neutral";
+  }
+}
+
 export function findDay(
   schedule: WeeklySchedule | null,
   isoDate: string,

@@ -5,9 +5,8 @@ import {
   sessionKindLabel,
 } from "@/lib/schedule/week";
 import { colors } from "@/lib/tokens/colors";
-import * as Linking from "expo-linking";
 import { MapPin, Video } from "lucide-react-native";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 type ScheduleSessionRowProps = {
   session: ScheduleSession;
@@ -23,12 +22,8 @@ export function ScheduleSessionRow({ session }: ScheduleSessionRowProps) {
   const attendance = attendanceStatusLabel(session.attendanceStatus);
   const place =
     session.sessionKind === "LiveOnline"
-      ? session.meetingUrl
-        ? "Online"
-        : "Trực tuyến"
+      ? "Trực tuyến"
       : session.location?.trim() || null;
-  const canOpenMeeting =
-    Boolean(session.meetingUrl) && session.sessionKind === "LiveOnline";
 
   return (
     <View className="rounded-2xl border border-border bg-card px-4 py-3.5">
@@ -66,19 +61,6 @@ export function ScheduleSessionRow({ session }: ScheduleSessionRowProps) {
         <Text className="mt-2 text-xs font-medium text-foreground">
           Điểm danh: {attendance}
         </Text>
-      ) : null}
-
-      {canOpenMeeting && session.meetingUrl ? (
-        <Pressable
-          accessibilityRole="link"
-          accessibilityLabel="Mở phòng học online"
-          onPress={() => void Linking.openURL(session.meetingUrl!)}
-          className="mt-3 h-10 items-center justify-center rounded-lg bg-secondary active:opacity-90"
-        >
-          <Text className="text-sm font-semibold text-foreground">
-            Mở phòng học
-          </Text>
-        </Pressable>
       ) : null}
     </View>
   );
