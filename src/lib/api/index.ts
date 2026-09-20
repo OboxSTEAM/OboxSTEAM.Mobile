@@ -64,3 +64,6 @@ export type {
   ClassSummary,
   SessionAttendance,
 } from "@/lib/api/class-sessions";
+
+export { uploadMedia } from "@/lib/api/media";
+export type { MediaAsset, UploadMediaFile, UploadMediaParams } from "@/lib/api/media";

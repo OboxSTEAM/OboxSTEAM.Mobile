@@ -91,6 +91,10 @@ async function refreshAccessToken(): Promise<RefreshResult | null> {
   return refreshPromise;
 }
 
+function isFormDataBody(body: unknown): body is FormData {
+  return typeof FormData !== "undefined" && body instanceof FormData;
+}
+
 async function buildHeaders(
   options: ApiFetchOptions,
   accessToken?: string | null,
@@ -99,13 +103,24 @@ async function buildHeaders(
   if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
   }
-  if (options.body !== undefined && !headers.has("Content-Type")) {
+  // Let the runtime set multipart boundary — never force JSON on FormData.
+  if (
+    options.body !== undefined &&
+    !isFormDataBody(options.body) &&
+    !headers.has("Content-Type")
+  ) {
     headers.set("Content-Type", "application/json");
   }
   if (!options.skipAuth && accessToken) {
     headers.set("Authorization", `Bearer ${accessToken}`);
   }
   return headers;
+}
+
+function serializeBody(body: unknown): BodyInit | undefined {
+  if (body === undefined) return undefined;
+  if (typeof body === "string" || isFormDataBody(body)) return body;
+  return JSON.stringify(body);
 }
 
 /**
@@ -128,12 +143,7 @@ export async function apiFetch(
     method: options.method ?? (options.body !== undefined ? "POST" : "GET"),
     headers,
     signal: options.signal,
-    body:
-      options.body === undefined
-        ? undefined
-        : typeof options.body === "string"
-          ? options.body
-          : JSON.stringify(options.body),
+    body: serializeBody(options.body),
   };
 
   let response = await fetch(url, init);

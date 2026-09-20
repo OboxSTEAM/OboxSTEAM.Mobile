@@ -14,7 +14,7 @@ export default function MentorLayout() {
 
   const renderTabBar = useCallback((props: BottomTabBarProps) => {
     const focused = props.state.routes[props.state.index]?.name ?? "";
-    if (focused.startsWith("qr")) return null;
+    if (focused.startsWith("qr") || focused.startsWith("capture")) return null;
     return <RoleDock {...props} />;
   }, []);
 
@@ -51,6 +51,13 @@ export default function MentorLayout() {
         options={{
           href: null,
           title: "QR điểm danh",
+        }}
+      />
+      <Tabs.Screen
+        name="capture/[sessionId]"
+        options={{
+          href: null,
+          title: "Chụp khoảnh khắc",
         }}
       />
     </Tabs>

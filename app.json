@@ -44,7 +44,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Cho phép OboxSTEAM dùng camera để quét mã điểm danh.",
+          "cameraPermission": "Cho phép OboxSTEAM dùng camera để quét mã điểm danh và chụp khoảnh khắc lớp học.",
           "barcodeScannerEnabled": true
         }
       ]

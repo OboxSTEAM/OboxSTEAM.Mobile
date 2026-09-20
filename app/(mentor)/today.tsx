@@ -11,7 +11,7 @@ import {
 import { colors } from "@/lib/tokens/colors";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QrCode } from "lucide-react-native";
+import { QrCode, Camera } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
@@ -131,7 +131,7 @@ export default function MentorTodayScreen() {
             <ScreenState
               kind="empty"
               title="Không có buổi hôm nay"
-              message="Khi có buổi Offline / trực tuyến trong ngày, bạn có thể mở QR điểm danh tại đây."
+              message="Khi có buổi Offline / trực tuyến trong ngày, bạn có thể mở QR điểm danh hoặc chụp khoảnh khắc tại đây."
             />
           ) : (
             <View className="gap-3">
@@ -151,25 +151,47 @@ export default function MentorTodayScreen() {
                       {session.location}
                     </Text>
                   ) : null}
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Mở QR điểm danh"
-                    onPress={() =>
-                      router.push({
-                        pathname: "/(mentor)/qr/[sessionId]",
-                        params: {
-                          sessionId: session.id,
-                          title: mentorSessionTitle(session),
-                        },
-                      })
-                    }
-                    className="mt-4 h-12 flex-row items-center justify-center gap-2 rounded-lg bg-primary active:opacity-90"
-                  >
-                    <QrCode color={colors.primaryForeground} size={18} />
-                    <Text className="text-base font-semibold text-primary-foreground">
-                      QR điểm danh
-                    </Text>
-                  </Pressable>
+                  <View className="mt-4 gap-2">
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Mở QR điểm danh"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(mentor)/qr/[sessionId]",
+                          params: {
+                            sessionId: session.id,
+                            title: mentorSessionTitle(session),
+                          },
+                        })
+                      }
+                      className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-primary active:opacity-90"
+                    >
+                      <QrCode color={colors.primaryForeground} size={18} />
+                      <Text className="text-base font-semibold text-primary-foreground">
+                        QR điểm danh
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Chụp khoảnh khắc"
+                      onPress={() =>
+                        router.push({
+                          pathname: "/(mentor)/capture/[sessionId]",
+                          params: {
+                            sessionId: session.id,
+                            classId: session.classId,
+                            title: mentorSessionTitle(session),
+                          },
+                        })
+                      }
+                      className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-secondary active:opacity-90"
+                    >
+                      <Camera color={colors.foreground} size={18} />
+                      <Text className="text-base font-semibold text-foreground">
+                        Chụp khoảnh khắc
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
             </View>
