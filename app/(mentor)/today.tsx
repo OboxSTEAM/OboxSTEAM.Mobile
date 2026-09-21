@@ -1,19 +1,21 @@
-import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
 import { FadeInContent, SkeletonBone } from "@/components/motion/skeleton";
 import { ScreenState } from "@/components/screen-state";
 import { useAuth } from "@/lib/auth/auth-context";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import {
-  getMentorSessionsForDay,
+  groupMentorSessionsByProgram,
+  isOfflineSession,
   mentorSessionSubtitle,
   mentorSessionTitle,
+  getMentorSessionsForDay,
   type MentorDaySession,
+  type MentorProgramGroup,
 } from "@/lib/mentor/today-sessions";
 import { colors } from "@/lib/tokens/colors";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { QrCode, Camera } from "lucide-react-native";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
@@ -22,6 +24,101 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+
+function OfflineSessionActions({
+  onOpenQr,
+  onOpenCapture,
+}: {
+  onOpenQr: () => void;
+  onOpenCapture: () => void;
+}) {
+  return (
+    <View className="mt-4 gap-2">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Mở QR điểm danh"
+        onPress={onOpenQr}
+        className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-primary active:opacity-90"
+      >
+        <QrCode color={colors.primaryForeground} size={18} />
+        <Text className="text-base font-semibold text-primary-foreground">
+          QR điểm danh
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Chụp khoảnh khắc"
+        onPress={onOpenCapture}
+        className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-secondary active:opacity-90"
+      >
+        <Camera color={colors.foreground} size={18} />
+        <Text className="text-base font-semibold text-foreground">
+          Chụp khoảnh khắc
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function SessionCard({
+  session,
+  onOpenQr,
+  onOpenCapture,
+}: {
+  session: MentorDaySession;
+  onOpenQr: () => void;
+  onOpenCapture: () => void;
+}) {
+  const showActions = isOfflineSession(session.sessionKind);
+
+  return (
+    <View className="rounded-2xl border border-border bg-card px-4 py-4">
+      <Text className="text-base font-semibold text-foreground">
+        {mentorSessionTitle(session)}
+      </Text>
+      <Text className="mt-1 text-sm text-muted-foreground">
+        {mentorSessionSubtitle(session)}
+      </Text>
+      {session.location ? (
+        <Text className="mt-1 text-sm text-muted-foreground">
+          {session.location}
+        </Text>
+      ) : null}
+      {showActions ? (
+        <OfflineSessionActions
+          onOpenQr={onOpenQr}
+          onOpenCapture={onOpenCapture}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function ProgramSection({
+  group,
+  onOpenQr,
+  onOpenCapture,
+}: {
+  group: MentorProgramGroup;
+  onOpenQr: (session: MentorDaySession) => void;
+  onOpenCapture: (session: MentorDaySession) => void;
+}) {
+  return (
+    <View className="gap-3">
+      <Text className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {group.programName}
+      </Text>
+      {group.sessions.map((session) => (
+        <SessionCard
+          key={session.id}
+          session={session}
+          onOpenQr={() => onOpenQr(session)}
+          onOpenCapture={() => onOpenCapture(session)}
+        />
+      ))}
+    </View>
+  );
+}
 
 export default function MentorTodayScreen() {
   const { user, signOut } = useAuth();
@@ -33,6 +130,11 @@ export default function MentorTodayScreen() {
     "idle" | "loading" | "refreshing" | "ready" | "error"
   >("idle");
   const [error, setError] = useState<string | null>(null);
+
+  const programGroups = useMemo(
+    () => groupMentorSessionsByProgram(sessions),
+    [sessions],
+  );
 
   const load = useCallback(
     async (options?: { silent?: boolean }) => {
@@ -62,7 +164,7 @@ export default function MentorTodayScreen() {
   const isInitialLoading = loadState === "loading" && sessions.length === 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
       <StatusBar style="dark" />
       <View className="px-4 pt-2">
         <View className="flex-row items-start justify-between gap-3">
@@ -107,103 +209,73 @@ export default function MentorTodayScreen() {
         />
       ) : (
         <FadeInContent style={{ flex: 1 }}>
-        <ScrollView
-          className="flex-1"
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingTop: 16,
-            paddingBottom: DOCK_CONTENT_PADDING,
-            flexGrow: 1,
-          }}
-          refreshControl={
-            <RefreshControl
-              refreshing={loadState === "refreshing"}
-              onRefresh={() => void load({ silent: true })}
-              tintColor={colors.primary}
-            />
-          }
-        >
-          {error ? (
-            <Pressable
-              onPress={() => void load()}
-              className="mb-3 rounded-xl border border-border bg-card px-3 py-2"
-            >
-              <Text className="text-sm text-primary">
-                {error} — chạm để thử lại
-              </Text>
-            </Pressable>
-          ) : null}
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingTop: 16,
+              paddingBottom: 24,
+              flexGrow: 1,
+            }}
+            refreshControl={
+              <RefreshControl
+                refreshing={loadState === "refreshing"}
+                onRefresh={() => void load({ silent: true })}
+                tintColor={colors.primary}
+              />
+            }
+          >
+            {error ? (
+              <Pressable
+                onPress={() => void load()}
+                className="mb-3 rounded-xl border border-border bg-card px-3 py-2"
+              >
+                <Text className="text-sm text-primary">
+                  {error} — chạm để thử lại
+                </Text>
+              </Pressable>
+            ) : null}
 
-          {sessions.length === 0 ? (
-            <ScreenState
-              kind="empty"
-              title="Không có buổi hôm nay"
-              message="Khi có buổi Offline / trực tuyến trong ngày, bạn có thể mở QR điểm danh hoặc chụp khoảnh khắc tại đây."
-            />
-          ) : (
-            <View className="gap-3">
-              {sessions.map((session) => (
-                <View
-                  key={session.id}
-                  className="rounded-2xl border border-border bg-card px-4 py-4"
-                >
-                  <Text className="text-base font-semibold text-foreground">
-                    {mentorSessionTitle(session)}
-                  </Text>
-                  <Text className="mt-1 text-sm text-muted-foreground">
-                    {mentorSessionSubtitle(session)}
-                  </Text>
-                  {session.location ? (
-                    <Text className="mt-1 text-sm text-muted-foreground">
-                      {session.location}
-                    </Text>
-                  ) : null}
-                  <View className="mt-4 gap-2">
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Mở QR điểm danh"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/(mentor)/qr/[sessionId]",
-                          params: {
-                            sessionId: session.id,
-                            title: mentorSessionTitle(session),
-                          },
-                        })
-                      }
-                      className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-primary active:opacity-90"
-                    >
-                      <QrCode color={colors.primaryForeground} size={18} />
-                      <Text className="text-base font-semibold text-primary-foreground">
-                        QR điểm danh
-                      </Text>
-                    </Pressable>
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel="Chụp khoảnh khắc"
-                      onPress={() =>
-                        router.push({
-                          pathname: "/(mentor)/capture/[sessionId]",
-                          params: {
-                            sessionId: session.id,
-                            classId: session.classId,
-                            title: mentorSessionTitle(session),
-                          },
-                        })
-                      }
-                      className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-secondary active:opacity-90"
-                    >
-                      <Camera color={colors.foreground} size={18} />
-                      <Text className="text-base font-semibold text-foreground">
-                        Chụp khoảnh khắc
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )}
-        </ScrollView>
+            {sessions.length === 0 ? (
+              <ScreenState
+                kind="empty"
+                title="Không có buổi hôm nay"
+                message="Khi có buổi Offline / trực tuyến trong ngày, chúng sẽ hiện theo từng chương trình tại đây."
+              />
+            ) : (
+              <View className="gap-8">
+                {programGroups.map((group) => (
+                  <ProgramSection
+                    key={
+                      group.programId ??
+                      group.sessions[0]?.classId ??
+                      group.programName
+                    }
+                    group={group}
+                    onOpenQr={(session) =>
+                      router.push({
+                        pathname: "/(mentor)/qr/[sessionId]",
+                        params: {
+                          sessionId: session.id,
+                          title: mentorSessionTitle(session),
+                        },
+                      })
+                    }
+                    onOpenCapture={(session) =>
+                      router.push({
+                        pathname: "/(mentor)/capture/[sessionId]",
+                        params: {
+                          sessionId: session.id,
+                          classId: session.classId,
+                          title: mentorSessionTitle(session),
+                        },
+                      })
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </ScrollView>
         </FadeInContent>
       )}
     </SafeAreaView>

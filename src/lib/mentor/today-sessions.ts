@@ -4,24 +4,35 @@ import {
   type ClassSession,
   type ClassSummary,
 } from "@/lib/api/class-sessions";
+import { getProgramById } from "@/lib/api/programs";
 import {
   formatDateInHcm,
   formatSessionTimeRange,
   sessionKindLabel,
 } from "@/lib/schedule/week";
 
-/** Mentor QR applies to in-person / live sessions — not assignment windows. */
+/** Mentor QR / capture apply to Offline; LiveOnline is list-only on mobile. */
 export function isCheckInEligibleKind(
   kind: ClassSession["sessionKind"],
 ): boolean {
   return kind === "Offline" || kind === "LiveOnline";
 }
 
-/** BE query example: `15/06/2026 14:30:00`. */
+export function isOfflineSession(
+  kind: ClassSession["sessionKind"],
+): boolean {
+  return kind === "Offline";
+}
+
+/**
+ * Query-string DateTime for ASP.NET `[FromQuery] DateTime?`.
+ * `dd/MM/yyyy` only works in JSON bodies (FlexibleDateTimeConverter) — query
+ * binding rejects day>12 (e.g. 21/09/…). Prefer ISO with Vietnam offset.
+ */
 export function formatBeDateTime(isoDate: string, time: string): string {
   const [year, month, day] = isoDate.split("-");
-  if (!year || !month || !day) return `${isoDate} ${time}`;
-  return `${day}/${month}/${year} ${time}`;
+  if (!year || !month || !day) return `${isoDate}T${time}+07:00`;
+  return `${year}-${month}-${day}T${time}+07:00`;
 }
 
 export function parseBeDateTime(raw: string): Date | null {
@@ -33,7 +44,6 @@ export function parseBeDateTime(raw: string): Date | null {
     const [, dd, mm, yyyy, hh, min, ss] = match;
     return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}+07:00`);
   }
-  // ISO-8601 / RFC3339 from some BE responses
   const isoMatch = trimmed.match(
     /^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2}):(\d{2})/,
   );
@@ -49,15 +59,41 @@ export function parseBeDateTime(raw: string): Date | null {
 export type MentorDaySession = ClassSession & {
   className?: string | null;
   classCode?: string | null;
+  programId?: string | null;
+  programName?: string | null;
+};
+
+export type MentorProgramGroup = {
+  programId: string | null;
+  programName: string;
+  sessions: MentorDaySession[];
 };
 
 function sessionSortKey(session: ClassSession): number {
   return parseBeDateTime(session.startTime)?.getTime() ?? 0;
 }
 
+async function resolveProgramNames(
+  programIds: string[],
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  await Promise.all(
+    programIds.map(async (id) => {
+      try {
+        const value = await getProgramById({ id });
+        const name = value.data?.name?.trim() || value.data?.code?.trim();
+        if (name) names.set(id, name);
+      } catch {
+        // Keep fallback label from class name below.
+      }
+    }),
+  );
+  return names;
+}
+
 /**
  * Discover today's check-in-eligible sessions for a mentor:
- * classes by mentorId → sessions in today's HCM window.
+ * classes by mentorId → sessions in today's HCM window → program labels.
  */
 export async function getMentorSessionsForDay(
   mentorUserId: string,
@@ -104,6 +140,7 @@ export async function getMentorSessionsForDay(
             ...session,
             className: klass.name,
             classCode: klass.code,
+            programId: klass.programId ?? null,
           });
         }
       } catch {
@@ -112,7 +149,53 @@ export async function getMentorSessionsForDay(
     }),
   );
 
+  const programIds = [
+    ...new Set(
+      results
+        .map((s) => s.programId?.trim())
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const programNames = await resolveProgramNames(programIds);
+
+  for (const session of results) {
+    const id = session.programId?.trim();
+    if (id && programNames.has(id)) {
+      session.programName = programNames.get(id) ?? null;
+    }
+  }
+
   return results.sort((a, b) => sessionSortKey(a) - sessionSortKey(b));
+}
+
+/** Group today's sessions under program section headers. */
+export function groupMentorSessionsByProgram(
+  sessions: MentorDaySession[],
+): MentorProgramGroup[] {
+  const order: string[] = [];
+  const map = new Map<string, MentorProgramGroup>();
+
+  for (const session of sessions) {
+    const key = session.programId?.trim() || `class:${session.classId}`;
+    let group = map.get(key);
+    if (!group) {
+      const programName =
+        session.programName?.trim() ||
+        session.className?.trim() ||
+        session.classCode?.trim() ||
+        "Chương trình";
+      group = {
+        programId: session.programId ?? null,
+        programName,
+        sessions: [],
+      };
+      map.set(key, group);
+      order.push(key);
+    }
+    group.sessions.push(session);
+  }
+
+  return order.map((key) => map.get(key)!);
 }
 
 export function mentorSessionTitle(session: MentorDaySession): string {
@@ -127,6 +210,8 @@ export function mentorSessionTitle(session: MentorDaySession): string {
 export function mentorSessionSubtitle(session: MentorDaySession): string {
   const kind = sessionKindLabel(session.sessionKind);
   const time = formatSessionTimeRange(session.startTime, session.endTime);
+  const classLabel = session.className?.trim() || session.classCode?.trim();
+  if (classLabel) return `${kind} · ${time} · ${classLabel}`;
   return `${kind} · ${time}`;
 }
 

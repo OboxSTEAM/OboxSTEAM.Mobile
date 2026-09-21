@@ -8,6 +8,7 @@ import {
   createApiResponseSchema,
   createApiValueSchema,
 } from "@/lib/api/schemas";
+import { File } from "expo-file-system";
 
 const mediaAssetValueSchema = createApiValueSchema(mediaAssetSchema);
 const mediaAssetResponseSchema = createApiResponseSchema(mediaAssetValueSchema);
@@ -27,6 +28,9 @@ export type UploadMediaParams = {
 /**
  * `POST /api/media/upload` — class-moment image/video (face pipeline).
  * Not session evidence (`POST /api/class-sessions/{id}/evidence`).
+ *
+ * Expo SDK 57 fetch rejects classic RN `{ uri, name, type }` FormData parts
+ * (`Unsupported FormDataPart implementation`). Append an Expo `File` instead.
  */
 export async function uploadMedia(
   params: UploadMediaParams,
@@ -43,12 +47,7 @@ export async function uploadMedia(
   }
 
   const formData = new FormData();
-  // RN FormData file shape — cast for DOM FormData typings.
-  formData.append("file", {
-    uri: params.file.uri,
-    name: params.file.name,
-    type: params.file.type,
-  } as unknown as Blob);
+  formData.append("file", new File(params.file.uri));
 
   const response = await apiFetch(`/api/media/upload?${query.toString()}`, {
     method: "POST",

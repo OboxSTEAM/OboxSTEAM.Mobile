@@ -5,15 +5,14 @@ import { secondsUntil } from "@/lib/mentor/today-sessions";
 import { colors } from "@/lib/tokens/colors";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import QRCode from "qrcode";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   Text,
   View,
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const MIN_ROTATE_GAP_MS = 2500;
@@ -30,7 +29,6 @@ export default function MentorQrScreen() {
   const titleParam = Array.isArray(params.title) ? params.title[0] : params.title;
 
   const [token, setToken] = useState<CheckInToken | null>(null);
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isRotating, setIsRotating] = useState(false);
@@ -53,17 +51,8 @@ export default function MentorQrScreen() {
       if (!data?.token) {
         throw new Error("Không nhận được mã QR từ máy chủ.");
       }
-      const dataUrl = await QRCode.toDataURL(data.token, {
-        width: 440,
-        margin: 1,
-        color: {
-          dark: colors.foreground,
-          light: colors.card,
-        },
-      });
       expiresAtRef.current = data.expiresAt;
       setToken(data);
-      setQrDataUrl(dataUrl);
       const left = secondsUntil(data.expiresAt);
       setSecondsLeft(left ?? 60);
       if (left == null) {
@@ -89,7 +78,6 @@ export default function MentorQrScreen() {
       if (stopped) return;
       const left = secondsUntil(expiresAtRef.current ?? token.expiresAt);
       if (left == null) {
-        // Unparseable expiry — stop auto-rotate to avoid a setState storm.
         stopped = true;
         setSecondsLeft(0);
         return;
@@ -151,11 +139,12 @@ export default function MentorQrScreen() {
 
         <View className="mt-6 flex-1 items-center">
           <View className="items-center rounded-3xl border border-border bg-card px-6 py-8">
-            {qrDataUrl ? (
-              <Image
-                source={{ uri: qrDataUrl }}
-                style={{ width: 220, height: 220 }}
-                accessibilityLabel="Mã QR điểm danh"
+            {token?.token ? (
+              <QRCode
+                value={token.token}
+                size={220}
+                color={colors.foreground}
+                backgroundColor={colors.card}
               />
             ) : (
               <View className="h-[220px] w-[220px] items-center justify-center">

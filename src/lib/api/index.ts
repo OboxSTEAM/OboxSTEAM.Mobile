@@ -67,3 +67,6 @@ export type {
 
 export { uploadMedia } from "@/lib/api/media";
 export type { MediaAsset, UploadMediaFile, UploadMediaParams } from "@/lib/api/media";
+
+export { getProgramById } from "@/lib/api/programs";
+export type { ProgramSummary } from "@/lib/api/programs";

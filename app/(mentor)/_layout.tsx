@@ -1,22 +1,13 @@
-import { RoleDock } from "@/components/role-dock";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   getHomeHrefForRole,
   isMentorRole,
 } from "@/lib/auth/roles";
 import { colors } from "@/lib/tokens/colors";
-import { Redirect } from "expo-router";
-import { Tabs, type BottomTabBarProps } from "expo-router/js-tabs";
-import { useCallback } from "react";
+import { Redirect, Stack } from "expo-router";
 
 export default function MentorLayout() {
   const { status, user } = useAuth();
-
-  const renderTabBar = useCallback((props: BottomTabBarProps) => {
-    const focused = props.state.routes[props.state.index]?.name ?? "";
-    if (focused.startsWith("qr") || focused.startsWith("capture")) return null;
-    return <RoleDock {...props} />;
-  }, []);
 
   if (status === "guest") {
     return <Redirect href="/welcome" />;
@@ -32,34 +23,16 @@ export default function MentorLayout() {
   }
 
   return (
-    <Tabs
-      tabBar={renderTabBar}
+    <Stack
       screenOptions={{
         headerShown: false,
-        sceneStyle: { backgroundColor: colors.background },
+        contentStyle: { backgroundColor: colors.background },
+        animation: "slide_from_right",
       }}
     >
-      <Tabs.Screen
-        name="today"
-        options={{
-          title: "Hôm nay",
-          tabBarLabel: "Hôm nay",
-        }}
-      />
-      <Tabs.Screen
-        name="qr/[sessionId]"
-        options={{
-          href: null,
-          title: "QR điểm danh",
-        }}
-      />
-      <Tabs.Screen
-        name="capture/[sessionId]"
-        options={{
-          href: null,
-          title: "Chụp khoảnh khắc",
-        }}
-      />
-    </Tabs>
+      <Stack.Screen name="today" />
+      <Stack.Screen name="qr/[sessionId]" />
+      <Stack.Screen name="capture/[sessionId]" />
+    </Stack>
   );
 }
