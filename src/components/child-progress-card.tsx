@@ -2,6 +2,7 @@ import { ChevronRight } from "lucide-react-native";
 import { Text, View } from "react-native";
 
 import { ChildAvatar } from "@/components/child-avatar";
+import { PopInBadge, PopInText } from "@/components/motion/effects";
 import { PressableScale } from "@/components/pressable-scale";
 import { StatusPill } from "@/components/status-pill";
 import { formatPercent } from "@/lib/parent/labels";
@@ -57,13 +58,13 @@ export function ChildProgressCard({
             >
               {name}
             </Text>
-            {newCount > 0 ? (
+            <PopInBadge visible={newCount > 0}>
               <View className="rounded-full bg-primary px-2 py-0.5">
                 <Text className="text-[11px] font-semibold text-primary-foreground">
                   +{newCount} mới
                 </Text>
               </View>
-            ) : null}
+            </PopInBadge>
           </View>
 
           <Text
@@ -78,12 +79,11 @@ export function ChildProgressCard({
           {!verified ? (
             <StatusPill label="Chờ xác minh" tone="warning" />
           ) : percent != null && !isLoading ? (
-            <Text
+            <PopInText
+              value={formatPercent(percent)}
               className="text-base font-bold text-foreground"
               style={{ fontVariant: ["tabular-nums"] }}
-            >
-              {formatPercent(percent)}
-            </Text>
+            />
           ) : null}
           {verified ? (
             <View className="h-8 w-8 items-center justify-center rounded-full bg-secondary">

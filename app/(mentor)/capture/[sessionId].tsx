@@ -1,4 +1,5 @@
 import { uploadMedia } from "@/lib/api/media";
+import { SuccessCheckEnter } from "@/components/motion/effects";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import { colors } from "@/lib/tokens/colors";
 import {
@@ -130,29 +131,33 @@ export default function MentorCaptureScreen() {
       <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
         <StatusBar style="dark" />
         <View className="flex-1 items-center justify-center px-6">
-          <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-steam-technology/20">
-            <Check color={colors.steam.technology} size={28} />
-          </View>
-          <Text className="text-center text-2xl font-bold text-foreground">
-            Đã tải lên
-          </Text>
-          <Text className="mt-2 text-center text-base text-muted-foreground">
-            {statusMessage}
-          </Text>
-          <Pressable
-            onPress={onRetake}
-            className="mt-6 h-12 w-full items-center justify-center rounded-lg bg-primary active:opacity-90"
-          >
-            <Text className="font-semibold text-primary-foreground">
-              Chụp thêm
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => router.back()}
-            className="mt-3 h-12 w-full items-center justify-center rounded-lg bg-secondary active:opacity-90"
-          >
-            <Text className="font-semibold text-foreground">Xong</Text>
-          </Pressable>
+          <SuccessCheckEnter>
+            <View className="items-center">
+              <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-steam-technology/20">
+                <Check color={colors.steam.technology} size={28} />
+              </View>
+              <Text className="text-center text-2xl font-bold text-foreground">
+                Đã tải lên
+              </Text>
+              <Text className="mt-2 text-center text-base text-muted-foreground">
+                {statusMessage}
+              </Text>
+              <Pressable
+                onPress={onRetake}
+                className="mt-6 h-12 w-full items-center justify-center rounded-lg bg-primary active:opacity-90"
+              >
+                <Text className="font-semibold text-primary-foreground">
+                  Chụp thêm
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.back()}
+                className="mt-3 h-12 w-full items-center justify-center rounded-lg bg-secondary active:opacity-90"
+              >
+                <Text className="font-semibold text-foreground">Xong</Text>
+              </Pressable>
+            </View>
+          </SuccessCheckEnter>
         </View>
       </SafeAreaView>
     );

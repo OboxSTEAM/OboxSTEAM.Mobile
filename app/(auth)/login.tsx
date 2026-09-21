@@ -1,18 +1,22 @@
 import { PressableScale } from "@/components/pressable-scale";
+import { IconSwapSlot } from "@/components/motion/effects";
 import { BRAND_LOGO, BRAND_NAME } from "@/lib/brand";
 import { formatAuthError, useAuth } from "@/lib/auth/auth-context";
 import { getHomeHrefForRole } from "@/lib/auth/roles";
+import { runErrorShake } from "@/lib/motion/shake";
+import { useReduceMotion } from "@/lib/motion/use-reduce-motion";
 import { colors } from "@/lib/tokens/colors";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ArrowLeft, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -29,11 +33,14 @@ const LOGO_SIZE = 220;
 export default function LoginScreen() {
   const router = useRouter();
   const { signIn, status, user } = useAuth();
+  const reduceMotion = useReduceMotion();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [focusedField, setFocusedField] = useState<"email" | "password" | null>(
     null,
   );
+  const emailShake = useRef(new Animated.Value(0)).current;
+  const passwordShake = useRef(new Animated.Value(0)).current;
 
   const {
     control,
@@ -52,6 +59,14 @@ export default function LoginScreen() {
     }
   }, [status, user?.role, router]);
 
+  useEffect(() => {
+    if (errors.email) runErrorShake(emailShake, reduceMotion);
+  }, [errors.email, emailShake, reduceMotion]);
+
+  useEffect(() => {
+    if (errors.password) runErrorShake(passwordShake, reduceMotion);
+  }, [errors.password, passwordShake, reduceMotion]);
+
   const onSubmit = handleSubmit(async (values) => {
     setIsSubmitting(true);
     try {
@@ -68,7 +83,8 @@ export default function LoginScreen() {
       <StatusBar style="dark" />
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
       >
         <View className="flex-1 overflow-hidden px-6">
           <View
@@ -120,10 +136,12 @@ export default function LoginScreen() {
             className="flex-1"
             contentContainerStyle={{
               flexGrow: 1,
-              justifyContent: "center",
-              paddingVertical: 16,
+              justifyContent: "flex-start",
+              paddingTop: 28,
+              paddingBottom: 24,
             }}
             keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
           >
             <View className="relative z-10 items-center">
@@ -144,31 +162,37 @@ export default function LoginScreen() {
                   control={control}
                   name="email"
                   render={({ field: { onChange, onBlur, value } }) => (
-                    <View
-                      className={`h-14 flex-row items-center rounded-xl border bg-card px-3 ${
-                        focusedField === "email"
-                          ? "border-primary"
-                          : "border-border"
-                      }`}
+                    <Animated.View
+                      style={{ transform: [{ translateX: emailShake }] }}
                     >
-                      <Mail color={colors.mutedForeground} size={20} />
-                      <TextInput
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        keyboardType="email-address"
-                        textContentType="emailAddress"
-                        placeholder="email@example.com"
-                        placeholderTextColor={colors.mutedForeground}
-                        onFocus={() => setFocusedField("email")}
-                        onBlur={() => {
-                          setFocusedField(null);
-                          onBlur();
-                        }}
-                        onChangeText={onChange}
-                        value={value}
-                        className="ml-3 flex-1 text-base text-foreground"
-                      />
-                    </View>
+                      <View
+                        className={`h-14 flex-row items-center rounded-xl border bg-card px-3 ${
+                          errors.email
+                            ? "border-primary"
+                            : focusedField === "email"
+                              ? "border-primary"
+                              : "border-border"
+                        }`}
+                      >
+                        <Mail color={colors.mutedForeground} size={20} />
+                        <TextInput
+                          autoCapitalize="none"
+                          autoCorrect={false}
+                          keyboardType="email-address"
+                          textContentType="emailAddress"
+                          placeholder="email@example.com"
+                          placeholderTextColor={colors.mutedForeground}
+                          onFocus={() => setFocusedField("email")}
+                          onBlur={() => {
+                            setFocusedField(null);
+                            onBlur();
+                          }}
+                          onChangeText={onChange}
+                          value={value}
+                          className="ml-3 flex-1 text-base text-foreground"
+                        />
+                      </View>
+                    </Animated.View>
                   )}
                 />
                 {errors.email ? (
@@ -186,44 +210,55 @@ export default function LoginScreen() {
                   control={control}
                   name="password"
                   render={({ field: { onChange, onBlur, value } }) => (
-                    <View
-                      className={`h-14 flex-row items-center rounded-xl border bg-card px-3 ${
-                        focusedField === "password"
-                          ? "border-primary"
-                          : "border-border"
-                      }`}
+                    <Animated.View
+                      style={{ transform: [{ translateX: passwordShake }] }}
                     >
-                      <Lock color={colors.mutedForeground} size={20} />
-                      <TextInput
-                        secureTextEntry={!isPasswordVisible}
-                        textContentType="password"
-                        placeholder="••••••••"
-                        placeholderTextColor={colors.mutedForeground}
-                        onFocus={() => setFocusedField("password")}
-                        onBlur={() => {
-                          setFocusedField(null);
-                          onBlur();
-                        }}
-                        onChangeText={onChange}
-                        value={value}
-                        className="ml-3 flex-1 text-base text-foreground"
-                      />
-                      <Pressable
-                        accessibilityRole="button"
-                        accessibilityLabel={
-                          isPasswordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"
-                        }
-                        onPress={() => setIsPasswordVisible((prev) => !prev)}
-                        className="h-10 w-10 items-center justify-center"
-                        hitSlop={8}
+                      <View
+                        className={`h-14 flex-row items-center rounded-xl border bg-card px-3 ${
+                          errors.password
+                            ? "border-primary"
+                            : focusedField === "password"
+                              ? "border-primary"
+                              : "border-border"
+                        }`}
                       >
-                        {isPasswordVisible ? (
-                          <EyeOff color={colors.mutedForeground} size={20} />
-                        ) : (
-                          <Eye color={colors.mutedForeground} size={20} />
-                        )}
-                      </Pressable>
-                    </View>
+                        <Lock color={colors.mutedForeground} size={20} />
+                        <TextInput
+                          secureTextEntry={!isPasswordVisible}
+                          textContentType="password"
+                          placeholder="••••••••"
+                          placeholderTextColor={colors.mutedForeground}
+                          onFocus={() => setFocusedField("password")}
+                          onBlur={() => {
+                            setFocusedField(null);
+                            onBlur();
+                          }}
+                          onChangeText={onChange}
+                          value={value}
+                          className="ml-3 flex-1 text-base text-foreground"
+                        />
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            isPasswordVisible ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+                          }
+                          onPress={() => setIsPasswordVisible((prev) => !prev)}
+                          className="h-10 w-10 items-center justify-center"
+                          hitSlop={8}
+                        >
+                          <IconSwapSlot swapKey={isPasswordVisible}>
+                            {isPasswordVisible ? (
+                              <EyeOff
+                                color={colors.mutedForeground}
+                                size={20}
+                              />
+                            ) : (
+                              <Eye color={colors.mutedForeground} size={20} />
+                            )}
+                          </IconSwapSlot>
+                        </Pressable>
+                      </View>
+                    </Animated.View>
                   )}
                 />
                 {errors.password ? (

@@ -1,5 +1,6 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
 import { ChildProgressCard } from "@/components/child-progress-card";
+import { FadeInContent, SkeletonBone } from "@/components/motion/skeleton";
 import { ScreenState } from "@/components/screen-state";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useChildren } from "@/lib/parent/children-context";
@@ -76,6 +77,7 @@ export default function ChildrenListScreen() {
         className="absolute -right-16 -top-10 h-52 w-52 rounded-full"
         style={{ backgroundColor: `${colors.primary}12` }}
       />
+      <FadeInContent style={{ flex: 1 }}>
       <FlatList
         data={links}
         keyExtractor={(item) => item.linkedUserId}
@@ -150,6 +152,7 @@ export default function ChildrenListScreen() {
           );
         }}
       />
+      </FadeInContent>
     </SafeAreaView>
   );
 }
@@ -241,24 +244,22 @@ function HomeHeader({
 function HomeSkeleton() {
   return (
     <View className="px-4 pt-3">
-      <View className="h-4 w-28 rounded-full bg-secondary" />
-      <View className="mt-2 h-8 w-40 rounded-xl bg-secondary" />
-      <View className="mt-2 h-4 w-56 rounded-full bg-secondary" />
-      <View className="mt-6 h-5 w-24 rounded-lg bg-secondary" />
-      <View className="mt-3 h-[72px] flex-row items-center rounded-2xl border border-border bg-card px-4">
-        <View className="h-12 w-12 rounded-[14px] bg-secondary" />
-        <View className="ml-3 flex-1">
-          <View className="h-4 w-32 rounded-full bg-secondary" />
-          <View className="mt-2 h-3 w-48 rounded-full bg-secondary" />
-        </View>
-      </View>
-      <View className="mt-3 h-[72px] flex-row items-center rounded-2xl border border-border bg-card px-4">
-        <View className="h-12 w-12 rounded-[14px] bg-secondary" />
-        <View className="ml-3 flex-1">
-          <View className="h-4 w-28 rounded-full bg-secondary" />
-          <View className="mt-2 h-3 w-40 rounded-full bg-secondary" />
-        </View>
-      </View>
+      <SkeletonBone style={{ height: 16, width: 112, borderRadius: 999 }} />
+      <SkeletonBone
+        style={{ height: 32, width: 160, borderRadius: 12, marginTop: 8 }}
+      />
+      <SkeletonBone
+        style={{ height: 16, width: 224, borderRadius: 999, marginTop: 8 }}
+      />
+      <SkeletonBone
+        style={{ height: 20, width: 96, borderRadius: 8, marginTop: 24 }}
+      />
+      <SkeletonBone
+        style={{ height: 72, borderRadius: 16, marginTop: 12 }}
+      />
+      <SkeletonBone
+        style={{ height: 72, borderRadius: 16, marginTop: 12 }}
+      />
     </View>
   );
 }

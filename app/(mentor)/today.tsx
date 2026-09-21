@@ -1,4 +1,5 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
+import { FadeInContent, SkeletonBone } from "@/components/motion/skeleton";
 import { ScreenState } from "@/components/screen-state";
 import { useAuth } from "@/lib/auth/auth-context";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
@@ -14,7 +15,6 @@ import { StatusBar } from "expo-status-bar";
 import { QrCode, Camera } from "lucide-react-native";
 import { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -89,8 +89,14 @@ export default function MentorTodayScreen() {
       </View>
 
       {isInitialLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color={colors.primary} size="large" />
+        <View className="flex-1 px-4 pt-6">
+          <SkeletonBone style={{ height: 20, width: 160, borderRadius: 8 }} />
+          <SkeletonBone
+            style={{ height: 120, borderRadius: 16, marginTop: 16 }}
+          />
+          <SkeletonBone
+            style={{ height: 120, borderRadius: 16, marginTop: 12 }}
+          />
         </View>
       ) : loadState === "error" && sessions.length === 0 ? (
         <ScreenState
@@ -100,6 +106,7 @@ export default function MentorTodayScreen() {
           onAction={() => void load()}
         />
       ) : (
+        <FadeInContent style={{ flex: 1 }}>
         <ScrollView
           className="flex-1"
           contentContainerStyle={{
@@ -197,6 +204,7 @@ export default function MentorTodayScreen() {
             </View>
           )}
         </ScrollView>
+        </FadeInContent>
       )}
     </SafeAreaView>
   );

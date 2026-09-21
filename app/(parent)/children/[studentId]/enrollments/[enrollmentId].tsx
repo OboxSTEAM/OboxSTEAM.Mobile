@@ -1,4 +1,6 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
+import { PopInText } from "@/components/motion/effects";
+import { FadeInContent, SkeletonBone } from "@/components/motion/skeleton";
 import { ModuleListItem } from "@/components/module-timeline-item";
 import { ScreenState } from "@/components/screen-state";
 import { StatusPill } from "@/components/status-pill";
@@ -31,18 +33,33 @@ function EnrollmentSkeleton() {
   return (
     <View className="px-4 pt-2">
       <View className="items-center rounded-2xl border border-border bg-card px-4 py-5">
-        <View className="h-5 w-48 rounded-lg bg-secondary" />
+        <SkeletonBone style={{ height: 20, width: 192, borderRadius: 8 }} />
         <View className="mt-5 flex-row gap-8">
-          <View className="h-14 w-14 rounded-xl bg-secondary" />
-          <View className="h-14 w-14 rounded-xl bg-secondary" />
-          <View className="h-14 w-14 rounded-xl bg-secondary" />
+          <SkeletonBone style={{ height: 56, width: 56, borderRadius: 12 }} />
+          <SkeletonBone style={{ height: 56, width: 56, borderRadius: 12 }} />
+          <SkeletonBone style={{ height: 56, width: 56, borderRadius: 12 }} />
         </View>
-        <View className="mt-5 h-20 w-full rounded-xl bg-secondary" />
+        <SkeletonBone
+          style={{
+            height: 80,
+            alignSelf: "stretch",
+            borderRadius: 12,
+            marginTop: 20,
+          }}
+        />
       </View>
-      <View className="mt-5 h-5 w-20 rounded-lg bg-secondary" />
-      <View className="mt-3 h-20 rounded-2xl bg-secondary" />
-      <View className="mt-3 h-20 rounded-2xl bg-secondary" />
-      <View className="mt-3 h-20 rounded-2xl bg-secondary" />
+      <SkeletonBone
+        style={{ height: 20, width: 80, borderRadius: 8, marginTop: 20 }}
+      />
+      <SkeletonBone
+        style={{ height: 80, borderRadius: 16, marginTop: 12 }}
+      />
+      <SkeletonBone
+        style={{ height: 80, borderRadius: 16, marginTop: 12 }}
+      />
+      <SkeletonBone
+        style={{ height: 80, borderRadius: 16, marginTop: 12 }}
+      />
     </View>
   );
 }
@@ -205,6 +222,7 @@ export default function EnrollmentDetailScreen() {
   return (
     <>
       <Stack.Screen options={{ title: programTitle }} />
+      <FadeInContent style={{ flex: 1 }}>
       <ScrollView
         className="flex-1 bg-background"
         contentContainerStyle={{
@@ -302,6 +320,7 @@ export default function EnrollmentDetailScreen() {
           <Text className="mt-3 text-sm text-primary">{error}</Text>
         ) : null}
       </ScrollView>
+      </FadeInContent>
     </>
   );
 }
@@ -317,16 +336,14 @@ function HeroStat({
 }) {
   return (
     <View className="min-w-[72px] flex-1 items-center px-1">
-      <Text
+      <PopInText
+        value={value}
         className="text-[28px] font-bold leading-8"
         style={{
           color: emphasize ? colors.primary : colors.foreground,
           fontVariant: ["tabular-nums"],
         }}
-        numberOfLines={1}
-      >
-        {value}
-      </Text>
+      />
       <Text className="mt-1 text-center text-xs text-muted-foreground">
         {label}
       </Text>

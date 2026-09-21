@@ -1,4 +1,5 @@
 import { rotateCheckInToken, type CheckInToken } from "@/lib/api/class-sessions";
+import { PopInText } from "@/components/motion/effects";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import { secondsUntil } from "@/lib/mentor/today-sessions";
 import { colors } from "@/lib/tokens/colors";
@@ -165,13 +166,22 @@ export default function MentorQrScreen() {
             <Text className="mt-5 text-sm text-muted-foreground">
               Mã dự phòng (6 số)
             </Text>
-            <Text className="mt-1 text-3xl font-bold tracking-[6px] text-foreground">
-              {token?.code ?? "------"}
-            </Text>
+            <PopInText
+              value={token?.code ?? "------"}
+              className="mt-1 text-3xl font-bold tracking-[6px] text-foreground"
+            />
 
-            <Text className="mt-4 text-sm font-semibold text-primary">
-              Còn {secondsLeft}s · tự làm mới
-            </Text>
+            <View className="mt-4 flex-row items-center justify-center">
+              <Text className="text-sm font-semibold text-primary">Còn </Text>
+              <PopInText
+                value={String(secondsLeft)}
+                className="text-sm font-semibold text-primary"
+                style={{ fontVariant: ["tabular-nums"] }}
+              />
+              <Text className="text-sm font-semibold text-primary">
+                s · tự làm mới
+              </Text>
+            </View>
           </View>
 
           {error ? (

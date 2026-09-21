@@ -1,6 +1,8 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
 import { ChildAvatar } from "@/components/child-avatar";
 import { ChildTodayAttendance } from "@/components/child-today-attendance";
+import { PopInText } from "@/components/motion/effects";
+import { FadeInContent, SkeletonBone } from "@/components/motion/skeleton";
 import { PressableScale } from "@/components/pressable-scale";
 import { ProgressBar } from "@/components/progress-bar";
 import { ScreenState } from "@/components/screen-state";
@@ -13,6 +15,8 @@ import type {
 import { getWeeklySchedule } from "@/lib/api/schedules";
 import { resolveAppError } from "@/lib/errors/resolve-app-error";
 import { formatRelativeVi } from "@/lib/format/date";
+import { configureModuleExpandAnimation } from "@/components/module-timeline-item";
+import { useReduceMotion } from "@/lib/motion/use-reduce-motion";
 import { useChildren } from "@/lib/parent/children-context";
 import {
   blockerLabel,
@@ -222,21 +226,37 @@ function ProgressSkeleton() {
     <View className="px-4 pt-2">
       <View className="rounded-2xl border border-border bg-card px-4 py-3.5">
         <View className="flex-row items-center">
-          <View className="h-14 w-14 rounded-[16px] bg-secondary" />
+          <SkeletonBone style={{ height: 56, width: 56, borderRadius: 16 }} />
           <View className="ml-3 flex-1">
-            <View className="h-5 w-36 rounded-lg bg-secondary" />
-            <View className="mt-2 h-3 w-24 rounded-full bg-secondary" />
+            <SkeletonBone style={{ height: 20, width: 144, borderRadius: 8 }} />
+            <SkeletonBone
+              style={{ height: 12, width: 96, borderRadius: 999, marginTop: 8 }}
+            />
           </View>
-          <View className="h-8 w-12 rounded-lg bg-secondary" />
+          <SkeletonBone style={{ height: 32, width: 48, borderRadius: 8 }} />
         </View>
-        <View className="mt-3 h-3 w-40 rounded-full bg-secondary" />
+        <SkeletonBone
+          style={{ height: 12, width: 160, borderRadius: 999, marginTop: 12 }}
+        />
       </View>
-      <View className="mt-5 h-5 w-40 rounded-lg bg-secondary" />
-      <View className="mt-3 h-32 rounded-2xl bg-secondary" />
-      <View className="mt-3 h-32 rounded-2xl bg-secondary" />
-      <View className="mt-5 h-5 w-24 rounded-lg bg-secondary" />
-      <View className="mt-3 h-16 rounded-2xl bg-secondary" />
-      <View className="mt-2 h-16 rounded-2xl bg-secondary" />
+      <SkeletonBone
+        style={{ height: 20, width: 160, borderRadius: 8, marginTop: 20 }}
+      />
+      <SkeletonBone
+        style={{ height: 128, borderRadius: 16, marginTop: 12 }}
+      />
+      <SkeletonBone
+        style={{ height: 128, borderRadius: 16, marginTop: 12 }}
+      />
+      <SkeletonBone
+        style={{ height: 20, width: 96, borderRadius: 8, marginTop: 20 }}
+      />
+      <SkeletonBone
+        style={{ height: 64, borderRadius: 16, marginTop: 12 }}
+      />
+      <SkeletonBone
+        style={{ height: 64, borderRadius: 16, marginTop: 8 }}
+      />
     </View>
   );
 }
@@ -260,6 +280,7 @@ export default function ChildProgressionScreen() {
   const link = links.find((item) => item.linkedUserId === studentId);
   const entry = studentId ? getProgression(studentId) : null;
   const [showAllRecent, setShowAllRecent] = useState(false);
+  const reduceMotion = useReduceMotion();
   const [todaySessions, setTodaySessions] = useState<ScheduleSession[]>([]);
   const [todayLoadState, setTodayLoadState] = useState<
     "idle" | "loading" | "ready" | "error"
@@ -373,6 +394,7 @@ export default function ChildProgressionScreen() {
     enrollments.filter((item) => item.status === "Active").length;
 
   return (
+    <FadeInContent style={{ flex: 1 }}>
     <ScrollView
       className="flex-1 bg-background"
       contentContainerStyle={{
@@ -420,12 +442,11 @@ export default function ChildProgressionScreen() {
             </View>
           </View>
           <View className="items-end">
-            <Text
+            <PopInText
+              value={formatPercent(overall)}
               className="text-[28px] font-bold leading-8 text-foreground"
               style={{ fontVariant: ["tabular-nums"] }}
-            >
-              {formatPercent(overall)}
-            </Text>
+            />
           </View>
         </View>
 
@@ -493,7 +514,10 @@ export default function ChildProgressionScreen() {
             <PressableScale
               accessibilityRole="button"
               accessibilityLabel="Xem thêm cập nhật gần đây"
-              onPress={() => setShowAllRecent(true)}
+              onPress={() => {
+                configureModuleExpandAnimation(reduceMotion);
+                setShowAllRecent(true);
+              }}
               className="mt-1 min-h-11 items-center justify-center rounded-xl bg-secondary px-4"
             >
               <Text className="text-sm font-medium text-foreground">
@@ -508,6 +532,7 @@ export default function ChildProgressionScreen() {
         <Text className="mt-3 text-sm text-primary">{entry.error}</Text>
       ) : null}
     </ScrollView>
+    </FadeInContent>
   );
 }
 

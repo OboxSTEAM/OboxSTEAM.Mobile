@@ -1,6 +1,7 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Pressable,
   RefreshControl,
@@ -11,6 +12,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
+import { PopInText } from "@/components/motion/effects";
+import { FadeInContent, SkeletonBone } from "@/components/motion/skeleton";
 import { NotificationRow } from "@/components/notification-row";
 import { ScreenState } from "@/components/screen-state";
 import type { Notification } from "@/lib/api/entities/notification";
@@ -20,6 +23,8 @@ import {
   navigateNotificationRoute,
   resolveNotificationRoute,
 } from "@/lib/notifications/navigate";
+import { motion } from "@/lib/motion/tokens";
+import { useReduceMotion } from "@/lib/motion/use-reduce-motion";
 import { colors } from "@/lib/tokens/colors";
 
 export default function NotificationsScreen() {
@@ -82,56 +87,58 @@ export default function NotificationsScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      <FlatList
-        data={items}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 4,
-          paddingBottom: DOCK_CONTENT_PADDING,
-          flexGrow: 1,
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={listState === "refreshing"}
-            onRefresh={() => void refresh({ force: true })}
-            tintColor={colors.primary}
-          />
-        }
-        onEndReached={() => {
-          if (hasNext) void loadMore();
-        }}
-        onEndReachedThreshold={0.4}
-        ListHeaderComponent={
-          <InboxHeader
-            unreadCount={unreadCount}
-            unreadOnly={unreadOnly}
-            isStale={isStale}
-            listError={listError}
-            onToggleUnreadOnly={() => setUnreadOnly(!unreadOnly)}
-            onMarkAll={() => void markAllRead()}
-          />
-        }
-        ListEmptyComponent={
-          <ScreenState
-            kind="empty"
-            title={unreadOnly ? "Không có chưa đọc" : "Chưa có thông báo"}
-            message={
-              unreadOnly
-                ? "Bạn đã đọc hết thông báo hiện tại."
-                : "Khi có cập nhật học tập hoặc thanh toán, thông báo sẽ hiện tại đây."
-            }
-          />
-        }
-        ListFooterComponent={
-          hasNext && listState !== "refreshing" ? (
-            <View className="items-center py-4">
-              <ActivityIndicator color={colors.primary} />
-            </View>
-          ) : null
-        }
-      />
+      <FadeInContent style={{ flex: 1 }}>
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingTop: 4,
+            paddingBottom: DOCK_CONTENT_PADDING,
+            flexGrow: 1,
+          }}
+          refreshControl={
+            <RefreshControl
+              refreshing={listState === "refreshing"}
+              onRefresh={() => void refresh({ force: true })}
+              tintColor={colors.primary}
+            />
+          }
+          onEndReached={() => {
+            if (hasNext) void loadMore();
+          }}
+          onEndReachedThreshold={0.4}
+          ListHeaderComponent={
+            <InboxHeader
+              unreadCount={unreadCount}
+              unreadOnly={unreadOnly}
+              isStale={isStale}
+              listError={listError}
+              onToggleUnreadOnly={() => setUnreadOnly(!unreadOnly)}
+              onMarkAll={() => void markAllRead()}
+            />
+          }
+          ListEmptyComponent={
+            <ScreenState
+              kind="empty"
+              title={unreadOnly ? "Không có chưa đọc" : "Chưa có thông báo"}
+              message={
+                unreadOnly
+                  ? "Bạn đã đọc hết thông báo hiện tại."
+                  : "Khi có cập nhật học tập hoặc thanh toán, thông báo sẽ hiện tại đây."
+              }
+            />
+          }
+          ListFooterComponent={
+            hasNext && listState !== "refreshing" ? (
+              <View className="items-center py-4">
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : null
+          }
+        />
+      </FadeInContent>
     </SafeAreaView>
   );
 }
@@ -151,14 +158,34 @@ function InboxHeader({
   onToggleUnreadOnly: () => void;
   onMarkAll: () => void;
 }) {
+  const reduceMotion = useReduceMotion();
+  const toggleScale = useRef(new Animated.Value(1)).current;
+  const markAllWidth = useRef(new Animated.Value(unreadCount > 0 ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (reduceMotion) {
+      markAllWidth.setValue(unreadCount > 0 ? 1 : 0);
+      return;
+    }
+    Animated.timing(markAllWidth, {
+      toValue: unreadCount > 0 ? 1 : 0,
+      duration: motion.duration.fast,
+      easing: motion.easeSmoothOut,
+      useNativeDriver: true,
+    }).start();
+  }, [unreadCount, reduceMotion, markAllWidth]);
+
   return (
     <View className="mb-4">
       <Text className="text-xl font-bold text-foreground">Thông báo</Text>
-      <Text className="mt-1 text-sm text-muted-foreground">
-        {unreadCount > 0
-          ? `${unreadCount} thông báo chưa đọc`
-          : "Bạn đã đọc hết thông báo."}
-      </Text>
+      <PopInText
+        value={
+          unreadCount > 0
+            ? `${unreadCount} thông báo chưa đọc`
+            : "Bạn đã đọc hết thông báo."
+        }
+        className="mt-1 text-sm text-muted-foreground"
+      />
 
       {isStale ? (
         <View
@@ -176,25 +203,57 @@ function InboxHeader({
       ) : null}
 
       <View className="mt-4 flex-row flex-wrap items-center gap-2">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: unreadOnly }}
-          onPress={onToggleUnreadOnly}
-          className={`h-11 items-center justify-center rounded-lg px-3 ${
-            unreadOnly ? "bg-primary" : "bg-secondary"
-          }`}
-          style={{ minHeight: 44 }}
-        >
-          <Text
-            className={`text-sm font-medium ${
-              unreadOnly ? "text-primary-foreground" : "text-foreground"
+        <Animated.View style={{ transform: [{ scale: toggleScale }] }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: unreadOnly }}
+            onPressIn={() => {
+              if (reduceMotion) return;
+              Animated.spring(toggleScale, {
+                toValue: 0.96,
+                friction: 7,
+                tension: 240,
+                useNativeDriver: true,
+              }).start();
+            }}
+            onPressOut={() => {
+              Animated.spring(toggleScale, {
+                toValue: 1,
+                friction: 7,
+                tension: 240,
+                useNativeDriver: true,
+              }).start();
+            }}
+            onPress={onToggleUnreadOnly}
+            className={`h-11 items-center justify-center rounded-lg px-3 ${
+              unreadOnly ? "bg-primary" : "bg-secondary"
             }`}
+            style={{ minHeight: 44 }}
           >
-            Chưa đọc
-          </Text>
-        </Pressable>
+            <Text
+              className={`text-sm font-medium ${
+                unreadOnly ? "text-primary-foreground" : "text-foreground"
+              }`}
+            >
+              Chưa đọc
+            </Text>
+          </Pressable>
+        </Animated.View>
 
-        {unreadCount > 0 ? (
+        <Animated.View
+          style={{
+            opacity: markAllWidth,
+            transform: [
+              {
+                scale: markAllWidth.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0.92, 1],
+                }),
+              },
+            ],
+          }}
+          pointerEvents={unreadCount > 0 ? "auto" : "none"}
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Đánh dấu tất cả đã đọc"
@@ -206,7 +265,7 @@ function InboxHeader({
               Đánh dấu tất cả đã đọc
             </Text>
           </Pressable>
-        ) : null}
+        </Animated.View>
       </View>
     </View>
   );
@@ -215,11 +274,19 @@ function InboxHeader({
 function InboxSkeleton() {
   return (
     <View className="px-4 pt-3">
-      <View className="h-7 w-36 rounded-xl bg-secondary" />
-      <View className="mt-2 h-4 w-48 rounded-full bg-secondary" />
-      <View className="mt-5 h-20 rounded-2xl bg-secondary" />
-      <View className="mt-2 h-20 rounded-2xl bg-secondary" />
-      <View className="mt-2 h-20 rounded-2xl bg-secondary" />
+      <SkeletonBone style={{ height: 28, width: 144, borderRadius: 12 }} />
+      <SkeletonBone
+        style={{ height: 16, width: 192, borderRadius: 999, marginTop: 8 }}
+      />
+      <SkeletonBone
+        style={{ height: 80, borderRadius: 16, marginTop: 20 }}
+      />
+      <SkeletonBone
+        style={{ height: 80, borderRadius: 16, marginTop: 8 }}
+      />
+      <SkeletonBone
+        style={{ height: 80, borderRadius: 16, marginTop: 8 }}
+      />
     </View>
   );
 }
