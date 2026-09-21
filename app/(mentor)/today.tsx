@@ -14,7 +14,10 @@ import {
 import { colors } from "@/lib/tokens/colors";
 import { useFocusEffect, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QrCode, Camera } from "lucide-react-native";
+import { QrCode, Camera, Images } from "lucide-react-native";
+import {
+  formatSessionTimeRange,
+} from "@/lib/schedule/week";
 import { useCallback, useMemo, useState } from "react";
 import {
   Pressable,
@@ -28,9 +31,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 function OfflineSessionActions({
   onOpenQr,
   onOpenCapture,
+  onOpenMedia,
 }: {
   onOpenQr: () => void;
   onOpenCapture: () => void;
+  onOpenMedia: () => void;
 }) {
   return (
     <View className="mt-4 gap-2">
@@ -47,13 +52,24 @@ function OfflineSessionActions({
       </Pressable>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Chụp khoảnh khắc"
+        accessibilityLabel="Chụp minh chứng"
         onPress={onOpenCapture}
         className="h-12 flex-row items-center justify-center gap-2 rounded-lg bg-secondary active:opacity-90"
       >
         <Camera color={colors.foreground} size={18} />
         <Text className="text-base font-semibold text-foreground">
-          Chụp khoảnh khắc
+          Chụp minh chứng
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Xem minh chứng"
+        onPress={onOpenMedia}
+        className="h-12 flex-row items-center justify-center gap-2 rounded-lg border border-border bg-card active:opacity-90"
+      >
+        <Images color={colors.foreground} size={18} />
+        <Text className="text-base font-semibold text-foreground">
+          Xem minh chứng
         </Text>
       </Pressable>
     </View>
@@ -64,10 +80,12 @@ function SessionCard({
   session,
   onOpenQr,
   onOpenCapture,
+  onOpenMedia,
 }: {
   session: MentorDaySession;
   onOpenQr: () => void;
   onOpenCapture: () => void;
+  onOpenMedia: () => void;
 }) {
   const showActions = isOfflineSession(session.sessionKind);
 
@@ -88,6 +106,7 @@ function SessionCard({
         <OfflineSessionActions
           onOpenQr={onOpenQr}
           onOpenCapture={onOpenCapture}
+          onOpenMedia={onOpenMedia}
         />
       ) : null}
     </View>
@@ -98,10 +117,12 @@ function ProgramSection({
   group,
   onOpenQr,
   onOpenCapture,
+  onOpenMedia,
 }: {
   group: MentorProgramGroup;
   onOpenQr: (session: MentorDaySession) => void;
   onOpenCapture: (session: MentorDaySession) => void;
+  onOpenMedia: (session: MentorDaySession) => void;
 }) {
   return (
     <View className="gap-3">
@@ -114,6 +135,7 @@ function ProgramSection({
           session={session}
           onOpenQr={() => onOpenQr(session)}
           onOpenCapture={() => onOpenCapture(session)}
+          onOpenMedia={() => onOpenMedia(session)}
         />
       ))}
     </View>
@@ -268,6 +290,24 @@ export default function MentorTodayScreen() {
                           sessionId: session.id,
                           classId: session.classId,
                           title: mentorSessionTitle(session),
+                          subtitle: formatSessionTimeRange(
+                            session.startTime,
+                            session.endTime,
+                          ),
+                        },
+                      })
+                    }
+                    onOpenMedia={(session) =>
+                      router.push({
+                        pathname: "/(mentor)/media/[sessionId]",
+                        params: {
+                          sessionId: session.id,
+                          classId: session.classId,
+                          title: mentorSessionTitle(session),
+                          subtitle: formatSessionTimeRange(
+                            session.startTime,
+                            session.endTime,
+                          ),
                         },
                       })
                     }

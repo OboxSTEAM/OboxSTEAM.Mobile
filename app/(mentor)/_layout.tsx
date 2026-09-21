@@ -32,7 +32,14 @@ export default function MentorLayout() {
     >
       <Stack.Screen name="today" />
       <Stack.Screen name="qr/[sessionId]" />
-      <Stack.Screen name="capture/[sessionId]" />
+      <Stack.Screen
+        name="capture/[sessionId]"
+        options={{ title: "Chụp minh chứng" }}
+      />
+      <Stack.Screen
+        name="media/[sessionId]"
+        options={{ title: "Minh chứng buổi học" }}
+      />
     </Stack>
   );
 }

@@ -65,8 +65,17 @@ export type {
   SessionAttendance,
 } from "@/lib/api/class-sessions";
 
-export { uploadMedia } from "@/lib/api/media";
-export type { MediaAsset, UploadMediaFile, UploadMediaParams } from "@/lib/api/media";
+export {
+  deleteMedia,
+  getMediaByClassSession,
+  uploadMedia,
+  unwrapMediaList,
+} from "@/lib/api/media";
+export type {
+  MediaAsset,
+  UploadMediaFile,
+  UploadMediaParams,
+} from "@/lib/api/media";
 
 export { getProgramById } from "@/lib/api/programs";
 export type { ProgramSummary } from "@/lib/api/programs";

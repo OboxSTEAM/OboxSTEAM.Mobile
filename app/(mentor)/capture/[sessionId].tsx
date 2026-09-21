@@ -8,7 +8,7 @@ import {
 } from "expo-camera";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Camera, Check, RotateCcw, Upload } from "lucide-react-native";
+import { Camera, Check, Images, RotateCcw, Upload } from "lucide-react-native";
 import { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -23,11 +23,13 @@ type CapturePhase = "camera" | "preview" | "success";
 
 function guessMimeAndName(uri: string): { name: string; type: string } {
   const lower = uri.toLowerCase();
-  if (lower.includes(".png")) return { name: "moment.png", type: "image/png" };
+  if (lower.includes(".png")) return { name: "evidence.png", type: "image/png" };
+  if (lower.includes(".mp4")) return { name: "evidence.mp4", type: "video/mp4" };
+  if (lower.includes(".mov")) return { name: "evidence.mov", type: "video/quicktime" };
   if (lower.includes(".webp")) {
-    return { name: "moment.webp", type: "image/webp" };
+    return { name: "evidence.webp", type: "image/webp" };
   }
-  return { name: "moment.jpg", type: "image/jpeg" };
+  return { name: "evidence.jpg", type: "image/jpeg" };
 }
 
 export default function MentorCaptureScreen() {
@@ -36,6 +38,7 @@ export default function MentorCaptureScreen() {
     sessionId: string;
     classId: string;
     title?: string;
+    subtitle?: string;
   }>();
   const sessionId = Array.isArray(params.sessionId)
     ? params.sessionId[0]
@@ -44,6 +47,9 @@ export default function MentorCaptureScreen() {
     ? params.classId[0]
     : params.classId;
   const titleParam = Array.isArray(params.title) ? params.title[0] : params.title;
+  const subtitleParam = Array.isArray(params.subtitle)
+    ? params.subtitle[0]
+    : params.subtitle;
 
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView>(null);
@@ -53,6 +59,19 @@ export default function MentorCaptureScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  const openMediaList = useCallback(() => {
+    if (!sessionId || !classId) return;
+    router.replace({
+      pathname: "/(mentor)/media/[sessionId]",
+      params: {
+        sessionId,
+        classId,
+        title: titleParam ?? "",
+        subtitle: subtitleParam ?? "",
+      },
+    });
+  }, [router, sessionId, classId, titleParam, subtitleParam]);
 
   const onCapture = useCallback(async () => {
     if (!cameraRef.current || isCapturing || isUploading) return;
@@ -83,7 +102,7 @@ export default function MentorCaptureScreen() {
   };
 
   const onUpload = useCallback(async () => {
-    if (!photoUri || !classId || !sessionId || isUploading) return;
+    if (!photoUri || !sessionId || !classId || isUploading) return;
     setIsUploading(true);
     setError(null);
     try {
@@ -95,9 +114,7 @@ export default function MentorCaptureScreen() {
       });
       setStatusMessage(
         value.message?.trim() ||
-          (value.data?.isReady === false
-            ? "Đã gửi — hệ thống đang xử lý nhận diện."
-            : "Đã tải lên khoảnh khắc lớp học."),
+          "File đã vào pipeline media (có thể dùng cho highlight).",
       );
       setPhase("success");
     } catch (err) {
@@ -105,7 +122,7 @@ export default function MentorCaptureScreen() {
     } finally {
       setIsUploading(false);
     }
-  }, [photoUri, classId, sessionId, isUploading]);
+  }, [photoUri, sessionId, classId, isUploading]);
 
   if (!sessionId || !classId) {
     return (
@@ -113,7 +130,7 @@ export default function MentorCaptureScreen() {
         <StatusBar style="dark" />
         <View className="flex-1 items-center justify-center px-6">
           <Text className="text-center text-base text-muted-foreground">
-            Thiếu thông tin buổi học để chụp khoảnh khắc.
+            Thiếu thông tin buổi học để chụp minh chứng.
           </Text>
           <Pressable
             onPress={() => router.back()}
@@ -137,24 +154,31 @@ export default function MentorCaptureScreen() {
                 <Check color={colors.steam.technology} size={28} />
               </View>
               <Text className="text-center text-2xl font-bold text-foreground">
-                Đã tải lên
+                Đã tải minh chứng
               </Text>
               <Text className="mt-2 text-center text-base text-muted-foreground">
                 {statusMessage}
               </Text>
               <Pressable
-                onPress={onRetake}
-                className="mt-6 h-12 w-full items-center justify-center rounded-lg bg-primary active:opacity-90"
+                onPress={openMediaList}
+                className="mt-6 h-12 w-full flex-row items-center justify-center gap-2 rounded-lg bg-primary active:opacity-90"
               >
+                <Images color={colors.primaryForeground} size={18} />
                 <Text className="font-semibold text-primary-foreground">
-                  Chụp thêm
+                  Xem danh sách minh chứng
                 </Text>
               </Pressable>
               <Pressable
-                onPress={() => router.back()}
+                onPress={onRetake}
                 className="mt-3 h-12 w-full items-center justify-center rounded-lg bg-secondary active:opacity-90"
               >
-                <Text className="font-semibold text-foreground">Xong</Text>
+                <Text className="font-semibold text-foreground">Chụp thêm</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.back()}
+                className="mt-3 h-12 w-full items-center justify-center rounded-lg active:opacity-90"
+              >
+                <Text className="font-semibold text-muted-foreground">Xong</Text>
               </Pressable>
             </View>
           </SuccessCheckEnter>
@@ -176,11 +200,12 @@ export default function MentorCaptureScreen() {
           <Text className="text-base text-primary">← Quay lại</Text>
         </Pressable>
         <Text className="mt-1 text-xl font-bold text-foreground">
-          Chụp khoảnh khắc
+          Chụp minh chứng
         </Text>
         {titleParam ? (
           <Text className="mt-1 text-sm text-muted-foreground" numberOfLines={2}>
             {titleParam}
+            {subtitleParam ? ` · ${subtitleParam}` : ""}
           </Text>
         ) : null}
       </View>
@@ -197,7 +222,7 @@ export default function MentorCaptureScreen() {
           ) : !permission?.granted ? (
             <View className="flex-1 items-center justify-center px-6">
               <Text className="text-center text-base text-muted-foreground">
-                Cần quyền camera để chụp khoảnh khắc lớp học.
+                Cần quyền camera để chụp minh chứng buổi học.
               </Text>
               <Pressable
                 onPress={() => void requestPermission()}
@@ -223,8 +248,8 @@ export default function MentorCaptureScreen() {
         ) : null}
 
         <Text className="mt-3 text-center text-xs leading-5 text-muted-foreground">
-          Ảnh gửi vào pipeline nhận diện khuôn mặt của lớp — không phải bằng
-          chứng buổi học trên web.
+          Ảnh/video gửi qua media pipeline (có nhận diện) và gắn với buổi học —
+          dùng cho highlight video.
         </Text>
 
         {phase === "preview" ? (
