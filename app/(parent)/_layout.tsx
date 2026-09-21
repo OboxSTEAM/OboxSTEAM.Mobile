@@ -57,13 +57,6 @@ export default function ParentLayout() {
               tabBarLabel: "Thông báo",
             }}
           />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: "Tài khoản",
-              tabBarLabel: "Tài khoản",
-            }}
-          />
         </Tabs>
       </NotificationsProvider>
     </ChildrenProvider>

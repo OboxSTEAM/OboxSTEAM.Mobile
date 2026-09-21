@@ -4,7 +4,6 @@ import {
   Circle,
   QrCode,
   Sun,
-  UserRound,
   Users,
   type LucideIcon,
 } from "lucide-react-native";
@@ -18,7 +17,6 @@ export type TabMeta = {
 const TAB_META: Record<string, TabMeta> = {
   children: { label: "Con", Icon: Users },
   notifications: { label: "Thông báo", Icon: Bell },
-  profile: { label: "Tài khoản", Icon: UserRound },
   schedule: { label: "Lịch", Icon: CalendarDays },
   "check-in": { label: "Check-in", Icon: QrCode },
   today: { label: "Hôm nay", Icon: Sun },

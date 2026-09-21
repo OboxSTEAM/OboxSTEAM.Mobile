@@ -3,7 +3,13 @@ import { BRAND_LOGO, BRAND_NAME } from "@/lib/brand";
 import { colors } from "@/lib/tokens/colors";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ArrowRight, Bell, TrendingUp, type LucideIcon } from "lucide-react-native";
+import {
+  ArrowRight,
+  GraduationCap,
+  Presentation,
+  Users,
+  type LucideIcon,
+} from "lucide-react-native";
 import { useEffect, useRef } from "react";
 import { Animated, Easing, Image, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,16 +25,22 @@ type Highlight = {
 
 const HIGHLIGHTS: Highlight[] = [
   {
-    title: "Tiến độ học",
-    detail: "Xem chương trình, module và cột mốc của con đã liên kết.",
-    Icon: TrendingUp,
+    title: "Phụ huynh",
+    detail: "Theo dõi tiến độ và lịch học của con.",
+    Icon: Users,
     tint: colors.steam.technology,
   },
   {
-    title: "Thông báo",
-    detail: "Nhận cập nhật liên kết và học tập ngay trên điện thoại.",
-    Icon: Bell,
+    title: "Học viên",
+    detail: "Xem lịch tuần, check-in bằng QR.",
+    Icon: GraduationCap,
     tint: colors.steam.engineering,
+  },
+  {
+    title: "Mentor",
+    detail: "Điểm danh QR, lưu khoảnh khắc lớp.",
+    Icon: Presentation,
+    tint: colors.steam.mathematics,
   },
 ];
 
@@ -77,7 +89,6 @@ export default function WelcomeScreen() {
           <View className="relative overflow-visible pt-8">
             <Image
               source={BRAND_LOGO}
-              pointerEvents="none"
               style={{
                 position: "absolute",
                 right: -36,
@@ -94,37 +105,50 @@ export default function WelcomeScreen() {
             <Text className="relative z-10 text-sm font-medium text-muted-foreground">
               {BRAND_NAME}
             </Text>
-            <Text className="relative z-10 mt-1 max-w-[240px] text-[32px] font-bold leading-[38px] text-foreground">
-              Theo dõi tiến độ của con.
+            <Text className="relative z-10 mt-1 max-w-[280px] text-[32px] font-bold leading-[38px] text-foreground">
+              Nền tảng STEAM cho mọi vai trò.
             </Text>
-            <Text className="relative z-10 mt-2 max-w-[240px] text-base leading-6 text-muted-foreground">
-              Ứng dụng phụ huynh: xem học tập STEAM và nhận thông báo.
+            <Text className="relative z-10 mt-2 max-w-[280px] text-base leading-6 text-muted-foreground">
+              Phụ huynh, Học viên và Mentor — một ứng dụng chung.
             </Text>
           </View>
 
-          <View className="mt-10 flex-1 justify-center gap-4">
-            {HIGHLIGHTS.map((item) => (
-              <View key={item.title} className="rounded-[28px] bg-secondary p-2">
+          <View className="mt-10 flex-1 justify-center gap-3">
+            {HIGHLIGHTS.map((item, index) => (
+              <Animated.View
+                key={item.title}
+                style={{
+                  opacity: enter,
+                  transform: [
+                    {
+                      translateY: enter.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [18 + index * 8, 0],
+                      }),
+                    },
+                  ],
+                }}
+              >
                 <View
-                  className="min-h-[96px] flex-row items-center rounded-[22px] bg-card px-5 py-5"
+                  className="min-h-[88px] flex-row items-center rounded-2xl border border-border bg-card px-5 py-4"
                   style={CARD_SHADOW}
                 >
                   <View
-                    className="h-14 w-14 items-center justify-center rounded-2xl"
+                    className="h-12 w-12 items-center justify-center rounded-2xl"
                     style={{ backgroundColor: `${item.tint}22` }}
                   >
-                    <item.Icon color={item.tint} size={26} />
+                    <item.Icon color={item.tint} size={24} />
                   </View>
                   <View className="ml-4 flex-1">
-                    <Text className="text-lg font-semibold text-foreground">
+                    <Text className="text-base font-semibold text-foreground">
                       {item.title}
                     </Text>
-                    <Text className="mt-1 text-[15px] leading-6 text-muted-foreground">
+                    <Text className="mt-0.5 text-[15px] leading-5 text-muted-foreground">
                       {item.detail}
                     </Text>
                   </View>
                 </View>
-              </View>
+              </Animated.View>
             ))}
           </View>
         </Animated.View>
@@ -145,7 +169,7 @@ export default function WelcomeScreen() {
             </View>
           </PressableScale>
           <Text className="mt-3 text-center text-xs leading-4 text-muted-foreground">
-            Dành cho phụ huynh OboxSTEAM
+            Dành cho Phụ huynh, Học viên và Mentor OboxSTEAM
           </Text>
         </View>
       </View>

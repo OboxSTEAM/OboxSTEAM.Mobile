@@ -1,9 +1,7 @@
 import { DOCK_CONTENT_PADDING } from "@/components/animated-dock";
 import { ChildProgressCard } from "@/components/child-progress-card";
-import { PressableScale } from "@/components/pressable-scale";
 import { ScreenState } from "@/components/screen-state";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useNotifications } from "@/lib/notifications/notifications-context";
 import { useChildren } from "@/lib/parent/children-context";
 import {
   childDisplayName,
@@ -13,10 +11,10 @@ import {
 } from "@/lib/parent/labels";
 import { colors } from "@/lib/tokens/colors";
 import { useRouter } from "expo-router";
-import { Bell } from "lucide-react-native";
 import { useMemo } from "react";
 import {
   FlatList,
+  Pressable,
   RefreshControl,
   Text,
   View,
@@ -25,8 +23,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function ChildrenListScreen() {
   const router = useRouter();
-  const { user } = useAuth();
-  const { unreadCount } = useNotifications();
+  const { user, signOut } = useAuth();
   const {
     links,
     linksState,
@@ -98,11 +95,15 @@ export default function ChildrenListScreen() {
         ListHeaderComponent={
           <HomeHeader
             displayName={givenName(user?.fullName, "Phụ huynh")}
+            email={user?.email?.trim() || null}
+            phone={user?.phone?.trim() || null}
             childCount={snapshot.childCount}
             newUpdates={snapshot.newUpdates}
-            unreadCount={unreadCount}
             linksError={linksError}
-            onOpenNotifications={() => router.push("/(parent)/notifications")}
+            onSignOut={async () => {
+              await signOut();
+              router.replace("/welcome");
+            }}
           />
         }
         ListEmptyComponent={
@@ -155,18 +156,20 @@ export default function ChildrenListScreen() {
 
 function HomeHeader({
   displayName,
+  email,
+  phone,
   childCount,
   newUpdates,
-  unreadCount,
   linksError,
-  onOpenNotifications,
+  onSignOut,
 }: {
   displayName: string;
+  email: string | null;
+  phone: string | null;
   childCount: number;
   newUpdates: number;
-  unreadCount: number;
   linksError: string | null;
-  onOpenNotifications: () => void;
+  onSignOut: () => void | Promise<void>;
 }) {
   return (
     <View className="mb-5">
@@ -181,33 +184,34 @@ function HomeHeader({
           >
             {displayName}
           </Text>
-          <Text className="mt-1 text-sm leading-5 text-muted-foreground">
-            Theo dõi tiến độ học của con.
-          </Text>
+          {email ? (
+            <Text
+              className="mt-1 text-sm leading-5 text-muted-foreground"
+              numberOfLines={1}
+            >
+              {email}
+            </Text>
+          ) : null}
+          {phone ? (
+            <Text
+              className="mt-0.5 text-sm leading-5 text-muted-foreground"
+              numberOfLines={1}
+            >
+              {phone}
+            </Text>
+          ) : null}
         </View>
 
-        <PressableScale
+        <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Mở thông báo"
-          onPress={onOpenNotifications}
-          className="h-11 w-11 items-center justify-center rounded-full bg-card"
-          style={{
-            minHeight: 44,
-            minWidth: 44,
-            shadowColor: colors.foreground,
-            shadowOpacity: 0.06,
-            shadowRadius: 10,
-            shadowOffset: { width: 0, height: 4 },
-            elevation: 2,
-          }}
+          accessibilityLabel="Đăng xuất"
+          onPress={() => void onSignOut()}
+          className="rounded-full bg-secondary px-3 py-2 active:opacity-80"
         >
-          <View className="h-11 w-11 items-center justify-center rounded-full bg-card">
-            <Bell color={colors.foreground} size={20} />
-            {unreadCount > 0 ? (
-              <View className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-primary" />
-            ) : null}
-          </View>
-        </PressableScale>
+          <Text className="text-xs font-semibold text-foreground">
+            Đăng xuất
+          </Text>
+        </Pressable>
       </View>
 
       {newUpdates > 0 ? (

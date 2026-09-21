@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 const DOCK_HEIGHT = 72;
 const DOCK_HORIZONTAL = 20;
 const DOCK_BOTTOM_GAP = 10;
-const ICON_WELL = 36;
+const ICON_SIZE = 22;
 
 /** Extra bottom padding so scroll content clears the floating dock. */
 export const DOCK_CONTENT_PADDING = DOCK_HEIGHT + DOCK_BOTTOM_GAP + 14;
@@ -50,20 +50,20 @@ function DockItem({
   onPress,
 }: DockItemProps) {
   const pressScale = useRef(new Animated.Value(1)).current;
-  const wellProgress = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
+  const activeProgress = useRef(new Animated.Value(isFocused ? 1 : 0)).current;
   const badgeScale = useRef(new Animated.Value(showBadge ? 1 : 0)).current;
   const wasBadgeVisible = useRef(showBadge);
 
   useEffect(() => {
     if (reduceMotion) {
-      wellProgress.setValue(isFocused ? 1 : 0);
+      activeProgress.setValue(isFocused ? 1 : 0);
       return;
     }
-    Animated.spring(wellProgress, {
+    Animated.spring(activeProgress, {
       toValue: isFocused ? 1 : 0,
       ...SNAPPY,
     }).start();
-  }, [isFocused, reduceMotion, wellProgress]);
+  }, [isFocused, reduceMotion, activeProgress]);
 
   useEffect(() => {
     if (showBadge === wasBadgeVisible.current) return;
@@ -89,24 +89,14 @@ function DockItem({
     }
   }, [badgeScale, reduceMotion, showBadge]);
 
-  const iconColor = isFocused
-    ? colors.primaryForeground
-    : colors.mutedForeground;
+  const iconColor = isFocused ? colors.primary : colors.mutedForeground;
   const labelColor = isFocused ? colors.primary : colors.mutedForeground;
 
-  const wellScale = wellProgress.interpolate({
+  const iconScale = activeProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.55, 1],
+    outputRange: [1, 1.08],
   });
-  const wellOpacity = wellProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-  const pillOpacity = wellProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-  const labelOpacity = wellProgress.interpolate({
+  const labelOpacity = activeProgress.interpolate({
     inputRange: [0, 1],
     outputRange: [0.55, 1],
   });
@@ -137,32 +127,13 @@ function DockItem({
     >
       {/* No className on Animated.* — NativeWind css-interop + animated styles can infinite-loop. */}
       <Animated.View
-        pointerEvents="none"
-        style={[
-          styles.itemPill,
-          { backgroundColor: colors.secondary, opacity: pillOpacity },
-        ]}
-      />
-
-      <Animated.View
         style={[styles.itemContent, { transform: [{ scale: pressScale }] }]}
       >
         <View style={styles.iconWell}>
-          <Animated.View
-            pointerEvents="none"
-            style={[
-              styles.iconWellFill,
-              {
-                backgroundColor: colors.primary,
-                opacity: wellOpacity,
-                transform: [{ scale: wellScale }],
-              },
-            ]}
-          />
-          <View>
+          <Animated.View style={{ transform: [{ scale: iconScale }] }}>
             <Icon
               color={iconColor}
-              size={isFocused ? 20 : 22}
+              size={ICON_SIZE}
               strokeWidth={isFocused ? 2.5 : 2}
             />
             {showBadge ? (
@@ -182,7 +153,7 @@ function DockItem({
                 </Text>
               </Animated.View>
             ) : null}
-          </View>
+          </Animated.View>
         </View>
         <Animated.Text
           style={[
@@ -204,7 +175,7 @@ function DockItem({
 
 /**
  * Shared floating tab bar for Parent / Student / Mentor.
- * Pill shell + primary icon chip on the active tab.
+ * Color-only active state (primary icon + label); press spring + haptic kept.
  */
 export function RoleDock({
   state,
@@ -334,25 +305,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  itemPill: {
-    position: "absolute",
-    top: 6,
-    bottom: 6,
-    left: 4,
-    right: 4,
-    borderRadius: 999,
-  },
   iconWell: {
-    width: ICON_WELL,
-    height: ICON_WELL,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
-  },
-  iconWellFill: {
-    position: "absolute",
-    width: ICON_WELL,
-    height: ICON_WELL,
-    borderRadius: ICON_WELL / 2,
   },
   badge: {
     position: "absolute",
